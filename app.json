@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "campus-trade-mobile",
-    "slug": "campus-trade-mobile",
+    "name": "CampusTrade",
+    "slug": "campus-trade",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "campustrademobile",
+    "scheme": "campustrade",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
