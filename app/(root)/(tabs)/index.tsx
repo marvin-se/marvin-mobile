@@ -1,4 +1,5 @@
 import CategoryFilter from "@/components/CategoryFilter";
+import ProductGrid from "@/components/ProductGrid";
 import Search from "@/components/Search";
 import { AntDesign, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Link, router } from "expo-router";
@@ -29,6 +30,7 @@ export default function Index() {
 
       <Search />
       <CategoryFilter onCategoryChange={handleCategoryChange} />
+      <ProductGrid />
     </SafeAreaView>
 
   );
