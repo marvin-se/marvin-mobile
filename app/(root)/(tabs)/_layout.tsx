@@ -40,7 +40,7 @@ const TabsLayout = () => {
                 options={{
                     headerShown: false,
                     tabBarIcon: ({ focused }) => (
-                        <TabIcon focused={focused} icon={<MaterialIcons name="storefront" size={24} color={focused ? "#3498DB" : "#2C3E50"} />} title="Marketplace" />
+                        <TabIcon focused={focused} icon={<MaterialIcons name="storefront" size={24} color={focused ? "#516BF4" : "#2C3E50"} />} title="Marketplace" />
                     ),
                 }}
             />
@@ -49,7 +49,7 @@ const TabsLayout = () => {
                 options={{
                     headerShown: false,
                     tabBarIcon: ({ focused }) => (
-                        <TabIcon focused={focused} icon={<FontAwesome5 name="heart" size={24} color={focused ? "#3498DB" : "#2C3E50"} />} title="Favorites" />
+                        <TabIcon focused={focused} icon={<FontAwesome5 name="heart" size={24} color={focused ? "#516BF4" : "#2C3E50"} />} title="Favorites" />
                     ),
                 }}
             />
@@ -59,7 +59,7 @@ const TabsLayout = () => {
                     headerShown: false,
                     /* tabBarStyle: { display: "none" }, */
                     tabBarIcon: ({ focused }) => (
-                        <TabIcon focused={focused} icon={<FontAwesome5 name="plus-square" size={24} color={focused ? "#3498DB" : "#2C3E50"} />} title="Upload" />
+                        <TabIcon focused={focused} icon={<FontAwesome5 name="plus-square" size={24} color={focused ? "#516BF4" : "#2C3E50"} />} title="Upload" />
                     ),
                 }}
             />
@@ -69,7 +69,7 @@ const TabsLayout = () => {
                     headerShown: false,
                     /* tabBarStyle: { display: "none" }, */
                     tabBarIcon: ({ focused }) => (
-                        <TabIcon focused={focused} icon={<MaterialCommunityIcons name="chat-outline" size={24} color={focused ? "#3498DB" : "#2C3E50"} />} title="Messages" />
+                        <TabIcon focused={focused} icon={<MaterialCommunityIcons name="chat-outline" size={24} color={focused ? "#516BF4" : "#2C3E50"} />} title="Messages" />
                     ),
                 }}
             />
@@ -79,7 +79,7 @@ const TabsLayout = () => {
                     headerShown: false,
                     /* tabBarStyle: { display: "none" }, */
                     tabBarIcon: ({ focused }) => (
-                        <TabIcon focused={focused} icon={<MaterialCommunityIcons name="account-outline" size={24} color={focused ? "#3498DB" : "#2C3E50"} />} title="Profile" />
+                        <TabIcon focused={focused} icon={<MaterialCommunityIcons name="account-outline" size={24} color={focused ? "#516BF4" : "#2C3E50"} />} title="Profile" />
                     ),
                 }}
             />

@@ -11,7 +11,8 @@ module.exports = {
         background: "#F8F9FA",
         textPrimary: "#2C3E50",
         textSecondary: "#7F8C8D",
-        borderPrimary: "#CDD5E0"
+        borderPrimary: "#CDD5E0",
+        buttonBackground: "#516BF4"
       }
     },
   },
