@@ -1,8 +1,9 @@
-import { View, Text, TouchableOpacity } from 'react-native'
-import React, { useState } from 'react'
-import { router } from 'expo-router';
-import { Image } from 'expo-image';
+import { useProductStore } from '@/store/useProductStore';
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
+import { router } from 'expo-router';
+import React from 'react';
+import { Text, TouchableOpacity, View } from 'react-native';
 
 interface ProductCardProps {
     id: string;
@@ -14,11 +15,10 @@ interface ProductCardProps {
 }
 
 const ProductCard = ({ id, title, price, image, seller, isFavorite }: ProductCardProps) => {
-
-    const [favorite, setFavorite] = useState(isFavorite);
+    const toggleFavorite = useProductStore((state) => state.toggleFavorite);
 
     const handleFavoriteToggle = () => {
-        setFavorite(!favorite);
+        toggleFavorite(id);
     }
 
     const handleProductPress = () => {
@@ -43,9 +43,9 @@ const ProductCard = ({ id, title, price, image, seller, isFavorite }: ProductCar
                     activeOpacity={0.5}
                 >
                     <Ionicons
-                        name={favorite ? 'heart' : 'heart-outline'}
+                        name={isFavorite ? 'heart' : 'heart-outline'}
                         size={20}
-                        color={favorite ? 'red' : 'black'}
+                        color={isFavorite ? 'red' : 'black'}
                     />
                 </TouchableOpacity>
             </View>
