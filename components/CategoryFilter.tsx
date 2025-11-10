@@ -8,15 +8,11 @@ const categories = [
     { id: 'furniture', label: 'Furniture' },
     { id: 'clothing', label: 'Clothing' },
     { id: 'sports', label: 'Sports' },
-    { id: 'other', label: 'Other' },
 ]
 
-const CategoryFilter = ({ onCategoryChange }: { onCategoryChange: (category: string) => void }) => {
-
-    const [selectedCategory, setSelectedCategory] = useState<string>('all');
+const CategoryFilter = ({ selectedCategory, onCategoryChange }: { selectedCategory: string, onCategoryChange: (category: string) => void }) => {
 
     const handleCategoryPress = (categoryId: string) => {
-        setSelectedCategory(categoryId);
         onCategoryChange(categoryId);
     }
 

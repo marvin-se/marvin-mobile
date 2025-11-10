@@ -8,6 +8,7 @@ export interface Product {
     image: string;
     seller: string;
     isFavorite: boolean;
+    category: string;
 }
 
 interface ProductStore {

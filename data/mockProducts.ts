@@ -6,6 +6,7 @@ const mockProducts = [
         image: 'https://picsum.photos/id/24/300/400',
         seller: 'Alex P.',
         isFavorite: false,
+        category: 'textbooks'
     },
     {
         id: '2',
@@ -14,6 +15,7 @@ const mockProducts = [
         image: 'https://picsum.photos/id/0/300/400',
         seller: 'Sarah K.',
         isFavorite: true,
+        category: 'electronics'
     },
     {
         id: '3',
@@ -22,6 +24,7 @@ const mockProducts = [
         image: 'https://picsum.photos/id/367/300/400',
         seller: 'Mike T.',
         isFavorite: false,
+        category: 'electronics'
     },
     {
         id: '4',
@@ -30,6 +33,7 @@ const mockProducts = [
         image: 'https://picsum.photos/id/835/300/400',
         seller: 'Emily R.',
         isFavorite: true,
+        category: 'clothing'
     },
     {
         id: '5',
@@ -38,6 +42,7 @@ const mockProducts = [
         image: 'https://picsum.photos/id/431/300/400',
         seller: 'James L.',
         isFavorite: false,
+        category: 'furniture'
     },
     {
         id: '6',
@@ -46,6 +51,7 @@ const mockProducts = [
         image: 'https://picsum.photos/id/160/300/400',
         seller: 'Lisa M.',
         isFavorite: true,
+        category: 'electronics'
     },
     {
         id: '7',
@@ -54,6 +60,7 @@ const mockProducts = [
         image: 'https://picsum.photos/id/452/300/400',
         seller: 'David K.',
         isFavorite: false,
+        category: 'appliances'
     },
     {
         id: '8',
@@ -62,6 +69,7 @@ const mockProducts = [
         image: 'https://picsum.photos/id/146/300/400',
         seller: 'Anna S.',
         isFavorite: true,
+        category: 'sports'
     },
     {
         id: '9',
@@ -70,6 +78,7 @@ const mockProducts = [
         image: 'https://picsum.photos/id/48/300/400',
         seller: 'Chris B.',
         isFavorite: false,
+        category: 'textbooks'
     },
     {
         id: '10',
@@ -78,6 +87,7 @@ const mockProducts = [
         image: 'https://picsum.photos/id/119/300/400',
         seller: 'Michelle W.',
         isFavorite: true,
+        category: 'electronics'
     },
     {
         id: '11',
@@ -86,6 +96,7 @@ const mockProducts = [
         image: 'https://picsum.photos/id/225/300/400',
         seller: 'Tom H.',
         isFavorite: false,
+        category: 'appliances'
     },
     {
         id: '12',
@@ -94,6 +105,7 @@ const mockProducts = [
         image: 'https://picsum.photos/id/628/300/400',
         seller: 'Jake P.',
         isFavorite: false,
+        category: 'sports'
     },
 ]
 
