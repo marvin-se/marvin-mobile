@@ -9,6 +9,7 @@ module.exports = {
         primary: "#3498DB",
         secondary: "#2ECC71",
         background: "#F8F9FA",
+        backgroundUpload: "#F1F2F3",
         textPrimary: "#2C3E50",
         textSecondary: "#7F8C8D",
         borderPrimary: "#CDD5E0",

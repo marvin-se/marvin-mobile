@@ -1,6 +1,6 @@
 import { View, Text } from 'react-native'
 import React from 'react'
-import { Tabs } from 'expo-router'
+import { router, Tabs } from 'expo-router'
 import { Image } from 'expo-image'
 import { FontAwesome5, Ionicons, MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons"
 
@@ -54,13 +54,19 @@ const TabsLayout = () => {
                 }}
             />
             <Tabs.Screen
-                name="upload"
+                name="upload-placeholder"
                 options={{
                     headerShown: false,
                     /* tabBarStyle: { display: "none" }, */
                     tabBarIcon: ({ focused }) => (
                         <TabIcon focused={focused} icon={<FontAwesome5 name="plus-square" size={24} color={focused ? "#516BF4" : "#2C3E50"} />} title="Upload" />
                     ),
+                }}
+                listeners={{
+                    tabPress:(e) => {
+                        e.preventDefault();
+                        router.push("/(root)/upload")
+                    }
                 }}
             />
             <Tabs.Screen
