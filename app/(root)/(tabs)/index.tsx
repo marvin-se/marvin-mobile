@@ -17,7 +17,7 @@ export default function Index() {
 
   return (
     <SafeAreaView className="bg-background h-full">
-      <View className="px-5">
+      <View className="px-5 mb-5">
         <View className="flex flex-row items-center justify-between mt-5">
           <Text className="text-2xl font-bold text-textPrimary">Campus Trade</Text>
           <View className="flex flex-row items-center gap-4">
