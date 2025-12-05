@@ -26,7 +26,7 @@ const Search = ({ chats }: { chats?: boolean }) => {
                     value={search}
                     onChangeText={handleSearch}
                     placeholder={chats ? "Search chats..." : "Search for textbooks, furniture..."}
-                    className="flex-1 px-2 ml-2 text-textPrimary"
+                    className="flex-1 px-2 ml-2 text-textPrimary placeholder:text-textSecondary"
                 />
             </View>
         </View>
