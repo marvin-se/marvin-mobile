@@ -1,17 +1,16 @@
-import { View, Text } from 'react-native'
-import React from 'react'
+import { FontAwesome5, MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons"
 import { router, Tabs } from 'expo-router'
-import { Image } from 'expo-image'
-import { FontAwesome5, Ionicons, MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons"
+import React from 'react'
+import { Text, View } from 'react-native'
 
-const TabIcon = ({ focused, icon, title }: { focused: boolean, icon: any, title: string }) => {
+const TabIcon = ({ focused, icon, title }: { focused: boolean, icon: any, title?: string }) => {
     return (
         <View className="flex-1 flex flex-col items-center">
             {icon}
             <Text
                 className={`${focused
                     ? "text-primary"
-                    : "text-black"
+                    : "text-lightGray"
                     } text-xs w-full text-center mt-1`}
             >
                 {title}
@@ -40,7 +39,7 @@ const TabsLayout = () => {
                 options={{
                     headerShown: false,
                     tabBarIcon: ({ focused }) => (
-                        <TabIcon focused={focused} icon={<MaterialIcons name="storefront" size={24} color={focused ? "#516BF4" : "#2C3E50"} />} title="Marketplace" />
+                        <TabIcon focused={focused} icon={<MaterialIcons name="storefront" size={24} color={focused ? "#72C69B" : "#DDD"} />} title="Marketplace" />
                     ),
                 }}
             />
@@ -49,7 +48,7 @@ const TabsLayout = () => {
                 options={{
                     headerShown: false,
                     tabBarIcon: ({ focused }) => (
-                        <TabIcon focused={focused} icon={<FontAwesome5 name="heart" size={24} color={focused ? "#516BF4" : "#2C3E50"} />} title="Favorites" />
+                        <TabIcon focused={focused} icon={<FontAwesome5 name="heart" size={24} color={focused ? "#72C69B" : "#DDD"} />} title="Favorites" />
                     ),
                 }}
             />
@@ -59,7 +58,9 @@ const TabsLayout = () => {
                     headerShown: false,
                     /* tabBarStyle: { display: "none" }, */
                     tabBarIcon: ({ focused }) => (
-                        <TabIcon focused={focused} icon={<FontAwesome5 name="plus-square" size={24} color={focused ? "#516BF4" : "#2C3E50"} />} title="Upload" />
+                        <View className='bg-primary rounded-full w-14 h-14 -mt-6 items-center justify-center'>
+                            <FontAwesome5 name="plus" size={24} color="#fff" />
+                        </View>
                     ),
                 }}
                 listeners={{
@@ -75,7 +76,7 @@ const TabsLayout = () => {
                     headerShown: false,
                     /* tabBarStyle: { display: "none" }, */
                     tabBarIcon: ({ focused }) => (
-                        <TabIcon focused={focused} icon={<MaterialCommunityIcons name="chat-outline" size={24} color={focused ? "#516BF4" : "#2C3E50"} />} title="Messages" />
+                        <TabIcon focused={focused} icon={<MaterialCommunityIcons name="chat-outline" size={24} color={focused ? "#72C69B" : "#DDD"} />} title="Messages" />
                     ),
                 }}
             />
@@ -85,7 +86,7 @@ const TabsLayout = () => {
                     headerShown: false,
                     /* tabBarStyle: { display: "none" }, */
                     tabBarIcon: ({ focused }) => (
-                        <TabIcon focused={focused} icon={<MaterialCommunityIcons name="account-outline" size={24} color={focused ? "#516BF4" : "#2C3E50"} />} title="Profile" />
+                        <TabIcon focused={focused} icon={<MaterialCommunityIcons name="account-outline" size={24} color={focused ? "#72C69B" : "#DDD"} />} title="Profile" />
                     ),
                 }}
             />

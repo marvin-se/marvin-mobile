@@ -51,7 +51,7 @@ const CategoryModal = ({ showCategoryModal, setShowCategoryModal, category, setC
                     {item.label}
                   </Text>
                   {category === item.value && (
-                    <MaterialIcons name="check" size={24} color="#3498DB" />
+                    <MaterialIcons name="check" size={24} color="#72C69B" />
                   )}
                 </TouchableOpacity>
               )}

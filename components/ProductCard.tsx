@@ -57,7 +57,7 @@ const ProductCard = ({ id, title, price, image, seller, isFavorite }: ProductCar
                 >
                     {title}
                 </Text>
-                <Text className="text-lg font-bold text-textPrimary mb-1">
+                <Text className="text-lg font-bold text-primary mb-1">
                     ${price}
                 </Text>
                 <Text className="text-sm text-textSecondary" numberOfLines={1}>

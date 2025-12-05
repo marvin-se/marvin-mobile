@@ -28,7 +28,7 @@ const CategoryFilter = ({ selectedCategory, onCategoryChange }: { selectedCatego
                     <TouchableOpacity
                         key={category.id}
                         onPress={() => handleCategoryPress(category.id)}
-                        className={`px-6 py-3 rounded-full ${selectedCategory === category.id ? 'bg-buttonBackground' : 'bg-white'}`}
+                        className={`px-6 py-3 rounded-full ${selectedCategory === category.id ? 'bg-primary' : 'bg-white'}`}
                         activeOpacity={0.5}
                     >
                         <Text
