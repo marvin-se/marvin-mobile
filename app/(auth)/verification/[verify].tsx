@@ -54,8 +54,7 @@ const Verification = () => {
   };
 
   return (
-    <View className="flex-1 bg-[#fdf6e3] px-8 pt-20">
-      {/* Back Button */}
+    <View className="flex-1 bg-[#fdf6e3]/60 px-8 pt-20">
       <TouchableOpacity
         onPress={() => router.back()}
         className="absolute top-12 left-6"
@@ -63,7 +62,6 @@ const Verification = () => {
         <Ionicons name="chevron-back" size={28} color="#182c53" />
       </TouchableOpacity>
 
-      {/* Content */}
       <View className="flex-1 justify-between py-10">
         <View>
           <Text className="text-3xl font-extrabold text-[#182c53] text-center">
@@ -82,15 +80,13 @@ const Verification = () => {
                 maxLength={1}
                 value={digit}
                 onChangeText={(value) => handleChange(value, index)}
-                className="w-12 h-14 border border-[#c7cdd8] rounded-xl text-center text-xl text-[#182c53]"
+                className="w-12 h-14 border border-[#c7cdd8] rounded-xl text-center text-xl text-[#182c53] bg-white"
               />
             ))}
           </View>
         </View>
 
-        {/* Footer */}
         <View>
-          {/* Verify Button */}
           <TouchableOpacity
             onPress={handleVerify}
             className="bg-[#72c69b] rounded-2xl py-4 shadow-md mb-8"
