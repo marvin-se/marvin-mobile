@@ -53,7 +53,7 @@ const Verification = () => {
     };
 
     return (
-        <View className="flex-1 bg-[#fdf6e3]/60 px-8 pt-20">
+        <View className="flex-1 bg-[#fdf6e3]/40 px-8 pt-20">
             <Header title={title} information={subtitle} />
 
             <View className="flex-1 justify-between py-10">
