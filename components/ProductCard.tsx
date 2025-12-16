@@ -6,20 +6,14 @@ import React from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 
 interface ProductCardProps {
-    id: string;
+    id: number;
     title: string;
     price: number;
-    image: string;
-    seller: string;
+    images: string[] | null;
     isFavorite?: boolean;
 }
 
-const ProductCard = ({ id, title, price, image, seller, isFavorite }: ProductCardProps) => {
-    const toggleFavorite = useProductStore((state) => state.toggleFavorite);
-
-    const handleFavoriteToggle = () => {
-        toggleFavorite(id);
-    }
+const ProductCard = ({ id, title, price, images, isFavorite }: ProductCardProps) => {
 
     const handleProductPress = () => {
         router.push(`/details/${id}`);
@@ -33,12 +27,12 @@ const ProductCard = ({ id, title, price, image, seller, isFavorite }: ProductCar
         >
             <View className='relative'>
                 <Image
-                    source={{ uri: image }}
+                    source={{ uri: images ? images[0] : undefined }}
                     style={{ width: '100%', height: 200, borderRadius: 16 }}
                     contentFit='cover'
                 />
                 <TouchableOpacity
-                    onPress={handleFavoriteToggle}
+                    /* onPress={handleFavoriteToggle} */
                     className='absolute top-3 right-3 bg-white/90 p-2 rounded-full z-50'
                     activeOpacity={0.5}
                 >
@@ -60,9 +54,9 @@ const ProductCard = ({ id, title, price, image, seller, isFavorite }: ProductCar
                 <Text className="text-lg font-bold text-primary mb-1">
                     ${price}
                 </Text>
-                <Text className="text-sm text-textSecondary" numberOfLines={1}>
+                {/* <Text className="text-sm text-textSecondary" numberOfLines={1}>
                     Sold by {seller}
-                </Text>
+                </Text> */}
             </View>
         </TouchableOpacity >
     )

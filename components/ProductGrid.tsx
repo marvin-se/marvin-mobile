@@ -2,28 +2,21 @@ import { useProductStore } from '@/store/useProductStore';
 import React, { useMemo } from 'react';
 import { FlatList, View } from 'react-native';
 import ProductCard from './ProductCard';
+import { useProducts } from '@/hooks/useProducts';
 
 const ProductGrid = ({ isFavoritesPage = false, filter }: { isFavoritesPage?: boolean, filter?: string }) => {
-    const products = useProductStore((state) => state.products);
-
-    const data = useMemo(() => {
-        return isFavoritesPage
-            ? products.filter(p => p.isFavorite)
-            : filter
-                ? products.filter(p => p.category === filter)
-                : products;
-    }, [products, isFavoritesPage, filter]);
+    const { products, isLoading, error } = useProducts();
 
     return (
         <View className='px-5 flex-1 my-8'>
             <FlatList
-                data={data}
+                data={products}
                 renderItem={({ item }) => (
-                    <ProductCard 
+                    <ProductCard
                         {...item}
                     />
                 )}
-                keyExtractor={(item) => item.id}
+                keyExtractor={(item) => item.id.toString()}
                 numColumns={2}
                 columnWrapperStyle={{ justifyContent: 'space-between' }}
                 showsVerticalScrollIndicator={false}
