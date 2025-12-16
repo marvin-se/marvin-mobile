@@ -1,16 +1,24 @@
-import { View, Text, TouchableOpacity, TextInput, Modal, FlatList, ScrollView, KeyboardAvoidingView, Platform } from 'react-native'
-import React, { useState } from 'react'
+import { View, Text, TouchableOpacity, TextInput, Modal, FlatList, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, Image } from 'react-native'
+import React, { use, useState } from 'react'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import { router } from "expo-router"
 import { MaterialCommunityIcons } from "@expo/vector-icons"
+import { useProductStore } from '@/store/useProductStore'
+import Toast from 'react-native-toast-message'
+import * as ImagePicker from "expo-image-picker"
+
+const MAX_IMAGES = 5;
 
 const categories = [
-  { label: 'Books', value: 'books' },
-  { label: 'Electronics', value: 'electronics' },
-  { label: 'Clothing', value: 'clothing' },
-  { label: 'Furniture', value: 'furniture' },
-  { label: 'Others', value: 'others' },
+  { label: 'Books', value: 'BOOKS' },
+  { label: 'Electronics', value: 'ELECTRONICS' },
+  { label: 'Fashion', value: 'FASHION' },
+  { label: 'Home', value: 'HOME' },
+  { label: 'Sports', value: 'SPORTS' },
+  { label: 'Other', value: 'OTHER' },
+  { label: 'Stationery', value: 'STATIONERY' },
+  { label: 'Furniture', value: 'FURNITURE' }
 ];
 
 const CategoryModal = ({ showCategoryModal, setShowCategoryModal, category, setCategory }: { showCategoryModal: boolean; setShowCategoryModal: React.Dispatch<React.SetStateAction<boolean>>; category: string | null; setCategory: React.Dispatch<React.SetStateAction<string | null>> }) => {
@@ -66,12 +74,101 @@ const CategoryModal = ({ showCategoryModal, setShowCategoryModal, category, setC
 }
 const Upload = () => {
 
+  const { createProduct, isLoading } = useProductStore();
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState<string | null>(null);
   const [price, setPrice] = useState("");
+  const [images, setImages] = useState<string[]>([]);
 
   const [showCategoryModal, setShowCategoryModal] = useState(false);
+
+  const pickImages = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Toast.show({ type: 'error', text1: 'Permission to access gallery is required!' });
+      return;
+    }
+
+    const remainingSlots = MAX_IMAGES - images.length;
+    if (remainingSlots <= 0) {
+      Toast.show({ type: 'error', text1: `You can only upload up to ${MAX_IMAGES} images.` });
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsMultipleSelection: true,
+      selectionLimit: remainingSlots,
+      quality: 0.7,
+    })
+
+    if (!result.canceled && result.assets) {
+      const newImages = result.assets.map(asset => asset.uri);
+      setImages((prev) => [...prev, ...newImages]);
+    }
+  }
+
+  const removeImage = (index: number) => {
+    setImages((prev) => prev.filter((_, i) => i !== index));
+  }
+
+
+
+  const handleSubmit = async () => {
+    if (images.length === 0) {
+      Toast.show({ type: 'error', text1: 'Please add at least one photo' });
+      return;
+    }
+    if (!title.trim()) {
+      Toast.show({ type: 'error', text1: 'Please enter item name' });
+      return;
+    }
+    if (!category) {
+      Toast.show({ type: 'error', text1: 'Please select a category' });
+      return;
+    }
+    if (!description.trim()) {
+      Toast.show({ type: 'error', text1: 'Please enter description' });
+      return;
+    }
+    if (!price.trim()) {
+      Toast.show({ type: 'error', text1: 'Please enter price' });
+      return;
+    }
+
+    try {
+      await createProduct({
+        title: title.trim(),
+        description: description.trim(),
+        price: parseFloat(price.trim()),
+        category: category,
+        images: images
+      });
+
+      Toast.show({
+        type: 'success',
+        text1: 'Success!',
+        text2: 'Your item has been listed'
+      });
+
+      setTitle("");
+      setDescription("");
+      setCategory(null);
+      setPrice("");
+
+      router.back();
+
+    } catch (error: any) {
+      Toast.show({
+        type: 'error',
+        text1: 'Failed to list item',
+        text2: error.message || 'Please try again'
+      });
+    }
+  };
+
 
   return (
     <SafeAreaView className='bg-backgroundUpload h-full'>
@@ -96,15 +193,42 @@ const Upload = () => {
         >
           <View className='px-5 flex gap-2 mb-5'>
             <Text className='text-black font-bold text-3xl'>Add Photos</Text>
-            <Text className='text-lg font-medium text-textSecondary mb-2'>Add up to 5 photos. The first is the cover.</Text>
-            <View className='h-36 w-36 border-2 border-dashed border-borderPrimary rounded-xl relative'>
-              <TouchableOpacity className='h-full w-full justify-center items-center' activeOpacity={0.5}>
-                <View className='flex gap-2 absolute inset-0 justify-center items-center'>
-                  <MaterialCommunityIcons name='camera-plus-outline' size={40} color='#7F8C8D' />
-                  <Text className='text-textSecondary font-medium text-lg'>Add Photo</Text>
-                </View>
-              </TouchableOpacity>
-            </View>
+            <Text className='text-lg font-medium text-textSecondary mb-2'>
+              Add up to {MAX_IMAGES} photos. The first is the cover. ({images.length}/{MAX_IMAGES})
+            </Text>
+
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View className='flex-row gap-3'>
+                {images.map((uri, index) => (
+                  <View key={index} className='h-36 w-36 rounded-xl overflow-hidden relative'>
+                    <Image source={{ uri }} className='h-full w-full' resizeMode='cover' />
+
+                    <TouchableOpacity
+                      onPress={() => removeImage(index)}
+                      className='absolute top-2 right-2 bg-black/50 rounded-full p-1'
+                      activeOpacity={0.7}
+                    >
+                      <MaterialIcons name="close" size={18} color="white" />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+
+                {images.length < MAX_IMAGES && (
+                  <View className='h-36 w-36 border-2 border-dashed border-borderPrimary rounded-xl'>
+                    <TouchableOpacity
+                      className='h-full w-full justify-center items-center'
+                      activeOpacity={0.5}
+                      onPress={pickImages}
+                    >
+                      <View className='flex gap-2 items-center'>
+                        <MaterialCommunityIcons name='camera-plus-outline' size={40} color='#7F8C8D' />
+                        <Text className='text-textSecondary font-medium text-lg'>Add Photo</Text>
+                      </View>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
+            </ScrollView>
           </View>
 
           <View className='px-5 flex gap-3'>
@@ -162,8 +286,13 @@ const Upload = () => {
       </KeyboardAvoidingView>
 
       <View className='px-5 w-full mt-5'>
-        <TouchableOpacity className='bg-primary p-4 rounded-lg' activeOpacity={0.5}>
-          <Text className='text-white text-center text-xl font-bold'>List Item</Text>
+        <TouchableOpacity className={`${isLoading ? "bg-primary/50" : "bg-primary"} p-4 rounded-lg`} activeOpacity={0.5} onPress={handleSubmit} disabled={isLoading}>
+          {isLoading ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <Text className='text-white text-center text-xl font-bold'>List Item</Text>
+          )
+          }
         </TouchableOpacity>
       </View>
 
