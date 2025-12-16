@@ -43,7 +43,7 @@ const ResetPassword = () => {
     };
 
     return (
-        <View className="flex-1 bg-[#fdf6e3]/60 px-8 pt-20">
+        <View className="flex-1 bg-[#fdf6e3]/40 px-8 pt-20">
             <Header title="Reset Password" information="Enter your new password" />
 
             <View className="px-4 mt-8">

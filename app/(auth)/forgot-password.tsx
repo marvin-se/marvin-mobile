@@ -40,7 +40,7 @@ const ForgotPassword = () => {
     };
 
     return (
-        <View className="flex-1 bg-[#fdf6e3]/60 px-8 pt-20">
+        <View className="flex-1 bg-[#fdf6e3]/40 px-8 pt-20">
             <Header
                 title="Forgot Password"
                 information="Enter your university email to receive a password reset link."

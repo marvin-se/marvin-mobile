@@ -14,11 +14,11 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({
 }) => {
     const content = (
         <ImageBackground
-            source={require("../../assets/images/auth.png")}
+            source={require("../../assets/images/bg-browse.png")}
             resizeMode="cover"
             className="flex-1 justify-center px-8"
         >
-            <View className="absolute inset-0 bg-[#fdf6e3]/70" />
+            <View className="absolute inset-0 bg-[#fdf6e3]/30" />
 
             <View className="px-4">
                 {showLogo && (
