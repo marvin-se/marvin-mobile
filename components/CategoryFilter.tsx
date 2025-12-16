@@ -8,15 +8,11 @@ const categories = [
     { id: 'furniture', label: 'Furniture' },
     { id: 'clothing', label: 'Clothing' },
     { id: 'sports', label: 'Sports' },
-    { id: 'other', label: 'Other' },
 ]
 
-const CategoryFilter = ({ onCategoryChange }: { onCategoryChange: (category: string) => void }) => {
-
-    const [selectedCategory, setSelectedCategory] = useState<string>('all');
+const CategoryFilter = ({ selectedCategory, onCategoryChange }: { selectedCategory: string, onCategoryChange: (category: string) => void }) => {
 
     const handleCategoryPress = (categoryId: string) => {
-        setSelectedCategory(categoryId);
         onCategoryChange(categoryId);
     }
 
@@ -32,7 +28,7 @@ const CategoryFilter = ({ onCategoryChange }: { onCategoryChange: (category: str
                     <TouchableOpacity
                         key={category.id}
                         onPress={() => handleCategoryPress(category.id)}
-                        className={`px-6 py-3 rounded-full ${selectedCategory === category.id ? 'bg-buttonBackground' : 'bg-white'}`}
+                        className={`px-6 py-3 rounded-full ${selectedCategory === category.id ? 'bg-primary' : 'bg-white'}`}
                         activeOpacity={0.5}
                     >
                         <Text
