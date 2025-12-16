@@ -9,3 +9,11 @@ export interface Product {
     favoriteCount: number | null;
     visitCount: number | null;
 }
+
+export interface CreateProductRequest {
+    title: string;
+    description: string;
+    price: number;
+    category: string;
+    images: string[];
+}

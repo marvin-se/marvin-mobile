@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { productService } from '@/api/services/product';
-import { Product } from '@/types/api';
+import { CreateProductRequest, Product } from '@/types/api';
 
 interface ProductStore {
     products: Product[];
@@ -8,6 +8,7 @@ interface ProductStore {
     error: string | null;
 
     fetchProducts: () => Promise<void>;
+    createProduct: (data: CreateProductRequest) => Promise<Product>;
 }
 
 export const useProductStore = create<ProductStore>((set, get) => ({
@@ -26,5 +27,23 @@ export const useProductStore = create<ProductStore>((set, get) => ({
                 isLoading: false
             });
         }
-    }
+    },
+
+    createProduct: async (data: CreateProductRequest) => {
+        set({ isLoading: true, error: null });
+        try {
+            const newProduct = await productService.createProduct(data);
+            set((state) => ({
+                products: [newProduct, ...state.products],
+                isLoading: false
+            }));
+            return newProduct;
+        } catch (error: any) {
+            set({
+                error: error.message || 'Failed to create product',
+                isLoading: false
+            });
+            throw error;
+        }
+    },
 }))
