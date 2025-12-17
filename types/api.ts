@@ -21,3 +21,9 @@ export interface CreateProductRequest {
 export interface FilterParams {
     category: string;
 }
+
+export interface FavouritesResponse {
+    id: number;
+    userId: number;
+    productId: number;
+}

@@ -2,8 +2,9 @@ import { useProductStore } from '@/store/useProductStore';
 import React, { useState } from 'react';
 import { FlatList, RefreshControl, View } from 'react-native';
 import ProductCard from './ProductCard';
+import { Product } from '@/types/api';
 
-const ProductGrid = ({ isFavoritesPage = false, currentCategory = 'ALL' }: { isFavoritesPage?: boolean, currentCategory?: string }) => {
+const ProductGrid = ({ isFavoritesPage = false, favoriteProducts = [], currentCategory = 'ALL' }: { isFavoritesPage?: boolean, favoriteProducts?: Product[], currentCategory?: string }) => {
     const { products, isLoading, clearCache, filterProducts } = useProductStore();
     const [refreshing, setRefreshing] = useState(false);
 
@@ -17,7 +18,7 @@ const ProductGrid = ({ isFavoritesPage = false, currentCategory = 'ALL' }: { isF
     return (
         <View className='px-5 flex-1 my-8'>
             <FlatList
-                data={products}
+                data={favoriteProducts.length > 0 ? favoriteProducts : products}
                 renderItem={({ item }) => (
                     <ProductCard
                         {...item}
