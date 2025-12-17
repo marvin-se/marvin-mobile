@@ -8,7 +8,14 @@ export const favouritesService = {
     },
 
     addFavourite: async (userId: number, productId: number): Promise<FavouritesResponse> => {
-        const response = await apiClient.post("/favourites", { userId, productId });
+        const response = await apiClient.post("/favourites/" + userId, {
+            userId,
+            productId
+        });
         return response.data;
+    },
+
+    removeFavourite: async (userId: number, productId: number): Promise<void> => {
+        await apiClient.delete("/favourites/" + userId + "/" + productId);
     }
 }

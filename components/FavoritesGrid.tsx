@@ -1,18 +1,19 @@
-import { useProductStore } from '@/store/useProductStore';
-import React, { useEffect, useState } from 'react';
-import { FlatList, RefreshControl, View } from 'react-native';
-import ProductCard from './ProductCard';
+import React, { useEffect, useState } from 'react'
+import ProductCard from './ProductCard'
+import { FlatList, RefreshControl, View } from 'react-native'
+import { useProductStore } from '@/store/useProductStore'
 
-const ProductGrid = ({ currentCategory = 'ALL' }: { currentCategory?: string }) => {
-    const { products, isLoading, clearCache, filterProducts, fetchFavoriteProducts, favoriteProducts } = useProductStore();
+const FavoritesGrid = () => {
+
+    const { favoriteProducts, fetchFavoriteProducts } = useProductStore();
     const [refreshing, setRefreshing] = useState(false);
 
     const onRefresh = async () => {
         setRefreshing(true);
-        clearCache();
-        await filterProducts({ category: currentCategory });
+        await fetchFavoriteProducts(1);
         setRefreshing(false);
     }
+
 
     useEffect(() => {
         const fetchFavorites = async () => {
@@ -24,11 +25,11 @@ const ProductGrid = ({ currentCategory = 'ALL' }: { currentCategory?: string }) 
     return (
         <View className='px-5 flex-1 my-8'>
             <FlatList
-                data={products}
+                data={favoriteProducts}
                 renderItem={({ item }) => (
                     <ProductCard
                         {...item}
-                        isFavorite={favoriteProducts.some(prod => prod.id === item.id)}
+                        isFavorite={true}
                     />
                 )}
                 keyExtractor={(item) => item.id.toString()}
@@ -48,4 +49,4 @@ const ProductGrid = ({ currentCategory = 'ALL' }: { currentCategory?: string }) 
     )
 }
 
-export default ProductGrid
+export default FavoritesGrid
