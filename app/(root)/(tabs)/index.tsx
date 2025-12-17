@@ -1,18 +1,26 @@
 import CategoryFilter from "@/components/CategoryFilter";
 import ProductGrid from "@/components/ProductGrid";
 import Search from "@/components/Search";
+import { useProductStore } from "@/store/useProductStore";
 import { AntDesign, MaterialCommunityIcons } from "@expo/vector-icons";
-import { Link, router } from "expo-router";
-import { useState } from "react";
+import { router } from "expo-router";
+import { useEffect, useState } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Index() {
 
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const { filterProducts, fetchProducts } = useProductStore();
+
+  const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
+
+  useEffect(() => {
+    fetchProducts();
+  }, [])
 
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category);
+    filterProducts({ category: category });
   }
 
   return (
@@ -35,7 +43,7 @@ export default function Index() {
 
       <Search />
       <CategoryFilter selectedCategory={selectedCategory} onCategoryChange={handleCategoryChange} />
-      <ProductGrid filter={selectedCategory === 'all' ? undefined : selectedCategory} />
+      <ProductGrid currentCategory={selectedCategory} />
     </SafeAreaView>
 
   );

@@ -1,11 +1,18 @@
 import { useProductStore } from '@/store/useProductStore';
-import React, { useMemo } from 'react';
-import { FlatList, View } from 'react-native';
+import React, { useState } from 'react';
+import { FlatList, RefreshControl, View } from 'react-native';
 import ProductCard from './ProductCard';
-import { useProducts } from '@/hooks/useProducts';
 
-const ProductGrid = ({ isFavoritesPage = false, filter }: { isFavoritesPage?: boolean, filter?: string }) => {
-    const { products, isLoading, error } = useProducts();
+const ProductGrid = ({ isFavoritesPage = false, currentCategory = 'ALL' }: { isFavoritesPage?: boolean, currentCategory?: string }) => {
+    const { products, isLoading, clearCache, filterProducts } = useProductStore();
+    const [refreshing, setRefreshing] = useState(false);
+
+    const onRefresh = async () => {
+        setRefreshing(true);
+        clearCache();
+        await filterProducts({ category: currentCategory });
+        setRefreshing(false);
+    }
 
     return (
         <View className='px-5 flex-1 my-8'>
@@ -21,6 +28,13 @@ const ProductGrid = ({ isFavoritesPage = false, filter }: { isFavoritesPage?: bo
                 columnWrapperStyle={{ justifyContent: 'space-between' }}
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{ paddingBottom: 20 }}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        tintColor="#2C3E50"
+                    />
+                }
             />
         </View>
     )

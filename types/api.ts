@@ -17,3 +17,7 @@ export interface CreateProductRequest {
     category: string;
     images: string[];
 }
+
+export interface FilterParams {
+    category: string;
+}

@@ -16,3 +16,14 @@ export const COLORS = {
     white: "#ffffff",
     error: "#ef4444",
 };
+
+export const categories = [
+  { label: 'Books', value: 'BOOKS' },
+  { label: 'Electronics', value: 'ELECTRONICS' },
+  { label: 'Fashion', value: 'FASHION' },
+  { label: 'Home', value: 'HOME' },
+  { label: 'Sports', value: 'SPORTS' },
+  { label: 'Other', value: 'OTHER' },
+  { label: 'Stationery', value: 'STATIONERY' },
+  { label: 'Furniture', value: 'FURNITURE' }
+];
