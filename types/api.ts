@@ -17,3 +17,13 @@ export interface CreateProductRequest {
     category: string;
     images: string[];
 }
+
+export interface FilterParams {
+    category: string;
+}
+
+export interface FavouritesResponse {
+    id: number;
+    userId: number;
+    productId: number;
+}

@@ -2,6 +2,7 @@ import { View, Text } from 'react-native'
 import React from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import ProductGrid from '@/components/ProductGrid'
+import FavoritesGrid from '@/components/FavoritesGrid'
 
 const Favorites = () => {
   return (
@@ -11,7 +12,7 @@ const Favorites = () => {
           <Text className="text-2xl font-bold text-textPrimary">Favorites</Text>
         </View>
       </View>
-      <ProductGrid isFavoritesPage={true} />
+      <FavoritesGrid />
     </SafeAreaView>
   )
 }

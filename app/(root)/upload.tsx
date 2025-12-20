@@ -7,19 +7,9 @@ import { MaterialCommunityIcons } from "@expo/vector-icons"
 import { useProductStore } from '@/store/useProductStore'
 import Toast from 'react-native-toast-message'
 import * as ImagePicker from "expo-image-picker"
+import { categories } from "@/utils/constants"
 
 const MAX_IMAGES = 5;
-
-const categories = [
-  { label: 'Books', value: 'BOOKS' },
-  { label: 'Electronics', value: 'ELECTRONICS' },
-  { label: 'Fashion', value: 'FASHION' },
-  { label: 'Home', value: 'HOME' },
-  { label: 'Sports', value: 'SPORTS' },
-  { label: 'Other', value: 'OTHER' },
-  { label: 'Stationery', value: 'STATIONERY' },
-  { label: 'Furniture', value: 'FURNITURE' }
-];
 
 const CategoryModal = ({ showCategoryModal, setShowCategoryModal, category, setCategory }: { showCategoryModal: boolean; setShowCategoryModal: React.Dispatch<React.SetStateAction<boolean>>; category: string | null; setCategory: React.Dispatch<React.SetStateAction<string | null>> }) => {
   return (

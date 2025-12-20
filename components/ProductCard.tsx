@@ -15,8 +15,18 @@ interface ProductCardProps {
 
 const ProductCard = ({ id, title, price, images, isFavorite }: ProductCardProps) => {
 
+    const { addFavoriteProduct, removeFavoriteProduct, fetchFavoriteProducts } = useProductStore();
+
     const handleProductPress = () => {
         router.push(`/details/${id}`);
+    }
+
+    const handleFavoriteToggle = (productId: number) => {
+        if (isFavorite) {
+            removeFavoriteProduct(1, productId);
+        } else {
+            addFavoriteProduct(1, productId);
+        }
     }
 
     return (
@@ -32,7 +42,7 @@ const ProductCard = ({ id, title, price, images, isFavorite }: ProductCardProps)
                     contentFit='cover'
                 />
                 <TouchableOpacity
-                    /* onPress={handleFavoriteToggle} */
+                    onPress={() => handleFavoriteToggle(id)}
                     className='absolute top-3 right-3 bg-white/90 p-2 rounded-full z-50'
                     activeOpacity={0.5}
                 >
