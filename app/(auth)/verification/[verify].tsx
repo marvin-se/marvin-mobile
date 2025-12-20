@@ -6,18 +6,21 @@ import Header from "@/components/auth/Header";
 import Button from "@/components/auth/Button";
 import CodeInput from "@/components/auth/CodeInput";
 import { validateCode } from "@/utils/validation";
+import { authService } from "@/api/services/auth";
 
 const Verification = () => {
     const router = useRouter();
-    const { verify } = useLocalSearchParams();
-    const isEmailVerification = verify === "email";
+    const params = useLocalSearchParams<{ verify: string; email: string }>();
+    const isEmailVerification = params.verify === "email";
 
     const title = isEmailVerification ? "Verify Your Email" : "Password Reset Code";
     const subtitle = "Please enter the 6-digit code sent to your university email address.";
 
     const [code, setCode] = useState(["", "", "", "", "", ""]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [isResending, setIsResending] = useState(false);
 
-    const handleVerify = () => {
+    const handleVerify = async () => {
         if (!validateCode(code)) {
             Toast.show({
                 type: "error",
@@ -27,29 +30,71 @@ const Verification = () => {
             return;
         }
 
-        Toast.show({
-            type: "success",
-            text1: "Verified!",
-            text2: isEmailVerification
-                ? "Your email has been verified."
-                : "Your reset code is valid.",
-        });
+        setIsLoading(true);
+        const codeString = code.join("");
 
-        setTimeout(() => {
+        try {
             if (isEmailVerification) {
-                router.push("/(auth)/sign-in");
+                await authService.verifyEmail({
+                    email: params.email,
+                    token: codeString
+                });
             } else {
-                router.push("/(auth)/reset-password");
+                await authService.verifyResetCode({ 
+                    email: params.email,
+                    token: codeString 
+                });
             }
-        }, 800);
+
+            Toast.show({
+                type: "success",
+                text1: "Verified!",
+                text2: isEmailVerification
+                    ? "Your email has been verified."
+                    : "Your reset code is valid.",
+            });
+
+            setTimeout(() => {
+                if (isEmailVerification) {
+                    router.push("/(auth)/sign-in");
+                } else {
+                    router.push({
+                        pathname: "/(auth)/reset-password",
+                        params: { code: codeString }
+                    });
+                }
+            }, 800);
+        } catch (error: any) {
+            Toast.show({
+                type: "error",
+                text1: "Verification Failed",
+                text2: error.message || "Invalid code. Please try again.",
+            });
+        } finally {
+            setIsLoading(false);
+        }
     };
 
-    const handleResend = () => {
-        Toast.show({
-            type: "success",
-            text1: "Code Resent",
-            text2: "A new verification code has been sent to your email.",
-        });
+    const handleResend = async () => {
+        setIsResending(true);
+
+        try {
+            await authService.resendCode({ type: isEmailVerification ? "email" : "reset" });
+
+            Toast.show({
+                type: "success",
+                text1: "Code Resent",
+                text2: "A new verification code has been sent to your email.",
+            });
+        } catch (error: any) {
+            Toast.show({
+                type: "error",
+                text1: "Resend Failed",
+                text2: error.message || "Could not resend code. Please try again.",
+            });
+        } finally {
+            setIsResending(false);
+        }
     };
 
     return (
@@ -61,13 +106,20 @@ const Verification = () => {
             </View>
 
             <View>
-                <Button title="Verify & Continue" onPress={handleVerify} />
+                <Button 
+                    title={isLoading ? "Verifying..." : "Verify & Continue"} 
+                    onPress={handleVerify}
+                    disabled={isLoading}
+                />
 
                 <View className="mt-6">
                     <Text className="text-center text-[#182c53] mb-4">
                         Didn't receive the email?{" "}
-                        <Text onPress={handleResend} className="text-[#72c69b] font-semibold">
-                            Resend Email
+                        <Text 
+                            onPress={isResending ? undefined : handleResend} 
+                            className={`font-semibold ${isResending ? "text-gray-400" : "text-[#72c69b]"}`}
+                        >
+                            {isResending ? "Sending..." : "Resend Email"}
                         </Text>
                     </Text>
                     <Button

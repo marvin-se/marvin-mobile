@@ -1,4 +1,5 @@
-import axios from "axios";
+import axios, { InternalAxiosRequestConfig } from "axios";
+import { getToken, removeToken } from "@/utils/storage";
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
@@ -11,9 +12,8 @@ export const apiClient = axios.create({
 })
 
 apiClient.interceptors.request.use(
-    (config) => {
-        const token =
-            "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ5aWxtYXpzZWwyMUBpdHUuZWR1LnRyIiwiaWF0IjoxNzY1OTY4OTA5LCJleHAiOjE3NjYwNTUzMDl9.bC0OxddAjHA5VwdnESguCm6ZWG3SCbBJ3bu6wjEDD_8";
+    async (config: InternalAxiosRequestConfig) => {
+        const token = await getToken();
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
@@ -26,12 +26,12 @@ apiClient.interceptors.request.use(
 
 apiClient.interceptors.response.use(
     (response) => response,
-    (error) => {
+    async (error) => {
         if (error.response) {
             const { status, data } = error.response;
 
             if (status === 401) {
-                //
+                await removeToken();
             }
 
             return Promise.reject({

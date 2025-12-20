@@ -8,14 +8,17 @@ import InputField from "@/components/auth/InputField";
 import Button from "@/components/auth/Button";
 import LinkText from "@/components/auth/LinkText";
 import { validateEmail } from "@/utils/validation";
+import { authService } from "@/api/services/auth";
+import { setToken } from "@/utils/storage";
 
 const SignIn = () => {
     const router = useRouter();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
-    const handleSignIn = () => {
+    const handleSignIn = async () => {
         if (!email || !password) {
             Toast.show({
                 type: "error",
@@ -34,13 +37,29 @@ const SignIn = () => {
             return;
         }
 
-        Toast.show({
-            type: "success",
-            text1: "Welcome!",
-            text2: "You have successfully signed in.",
-        });
+        setIsLoading(true);
 
-        router.push("/");
+        try {
+            const response = await authService.signIn({ email, password });
+        
+            await setToken(response.token);
+
+            Toast.show({
+                type: "success",
+                text1: "Welcome!",
+                text2: "You have successfully signed in.",
+            });
+
+            router.push("/");
+        } catch (error: any) {
+            Toast.show({
+                type: "error",
+                text1: "Sign In Failed",
+                text2: error.message || "Please check your credentials and try again.",
+            });
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -50,7 +69,7 @@ const SignIn = () => {
             <InputField
                 label="University Email"
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={(text) => setEmail(text.toLowerCase())}
                 placeholder="yourname@university.edu"
                 keyboardType="email-address"
             />
@@ -71,7 +90,11 @@ const SignIn = () => {
                 style="self-end mb-6"
             />
 
-            <Button title="Sign In" onPress={handleSignIn} />
+            <Button 
+                title={isLoading ? "Signing In..." : "Sign In"} 
+                onPress={handleSignIn}
+                disabled={isLoading}
+            />
 
             <View className="mt-8">
                 <LinkText
