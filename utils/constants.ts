@@ -1,5 +1,5 @@
 export const UNIVERSITIES = [
-    "Harvard University",
+    "İstanbul Teknik Üniversitesi",
     "Stanford University",
     "MIT",
     "UCLA",
