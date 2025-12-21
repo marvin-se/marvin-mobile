@@ -39,9 +39,9 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
                 style={{ flex: 1 }}
             >
-                <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+                <View className="flex-1">
                     {content}
-                </ScrollView>
+                </View>
             </KeyboardAvoidingView>
         );
     }
