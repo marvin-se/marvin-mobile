@@ -12,9 +12,9 @@ interface ProductStore {
     error: string | null;
 
     fetchProducts: () => Promise<void>;
-    fetchFavoriteProducts: (userId: number) => Promise<void>;
-    addFavoriteProduct: (userId: number, productId: number) => Promise<void>;
-    removeFavoriteProduct: (userId: number, productId: number) => Promise<void>;
+    fetchFavoriteProducts: () => Promise<void>;
+    addFavoriteProduct: (productId: number) => Promise<void>;
+    removeFavoriteProduct: (productId: number) => Promise<void>;
     filterProducts: (params: FilterParams) => Promise<void>;
     createProduct: (data: CreateProductRequest) => Promise<Product>;
     clearCache: () => void;
@@ -47,10 +47,10 @@ export const useProductStore = create<ProductStore>((set, get) => ({
         }
     },
 
-    fetchFavoriteProducts: async (userId: number) => {
+    fetchFavoriteProducts: async () => {
         set({ isLoading: true, error: null });
         try {
-            const favoriteProductIds = await favouritesService.getFavourites(userId);
+            const favoriteProductIds = await favouritesService.getFavourites();
             const allProducts = await productService.getProducts();
             const favoriteProducts = allProducts.filter(product =>
                 favoriteProductIds.some(fav => fav.productId === product.id)
@@ -64,7 +64,7 @@ export const useProductStore = create<ProductStore>((set, get) => ({
         }
     },
 
-    addFavoriteProduct: async (userId: number, productId: number) => {
+    addFavoriteProduct: async (productId: number) => {
         const { products, favoriteProducts } = get();
         const previousFavoriteProducts = [...favoriteProducts];
 
@@ -80,7 +80,7 @@ export const useProductStore = create<ProductStore>((set, get) => ({
         }
 
         try {
-            await favouritesService.addFavourite(userId, productId);
+            await favouritesService.addFavourite(productId);
             set({ isLoading: false });
         } catch (error: any) {
             set({
@@ -91,7 +91,7 @@ export const useProductStore = create<ProductStore>((set, get) => ({
         }
     },
 
-    removeFavoriteProduct: async (userId: number, productId: number) => {
+    removeFavoriteProduct: async (productId: number) => {
         const { products, favoriteProducts } = get();
         const previousFavoriteProducts = [...favoriteProducts];
 
@@ -104,7 +104,7 @@ export const useProductStore = create<ProductStore>((set, get) => ({
         }
 
         try {
-            await favouritesService.removeFavourite(userId, productId);
+            await favouritesService.removeFavourite(productId);
             set({ isLoading: false });
         } catch (error: any) {
             set({

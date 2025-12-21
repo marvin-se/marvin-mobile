@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react'
-import ProductCard from './ProductCard'
-import { FlatList, RefreshControl, View } from 'react-native'
 import { useProductStore } from '@/store/useProductStore'
+import React, { useEffect, useState } from 'react'
+import { FlatList, RefreshControl, View } from 'react-native'
+import ProductCard from './ProductCard'
 
 const FavoritesGrid = () => {
 
@@ -10,14 +10,14 @@ const FavoritesGrid = () => {
 
     const onRefresh = async () => {
         setRefreshing(true);
-        await fetchFavoriteProducts(1);
+        await fetchFavoriteProducts();
         setRefreshing(false);
     }
 
 
     useEffect(() => {
         const fetchFavorites = async () => {
-            await fetchFavoriteProducts(1);
+            await fetchFavoriteProducts();
         }
         fetchFavorites();
     }, [])

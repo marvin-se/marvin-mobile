@@ -16,7 +16,7 @@ const ProductGrid = ({ currentCategory = 'ALL' }: { currentCategory?: string }) 
 
     useEffect(() => {
         const fetchFavorites = async () => {
-            await fetchFavoriteProducts(1);
+            await fetchFavoriteProducts();
         }
         fetchFavorites();
     }, [])

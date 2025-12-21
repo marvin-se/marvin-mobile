@@ -23,9 +23,9 @@ const ProductCard = ({ id, title, price, images, isFavorite }: ProductCardProps)
 
     const handleFavoriteToggle = (productId: number) => {
         if (isFavorite) {
-            removeFavoriteProduct(1, productId);
+            removeFavoriteProduct(productId);
         } else {
-            addFavoriteProduct(1, productId);
+            addFavoriteProduct(productId);
         }
     }
 
