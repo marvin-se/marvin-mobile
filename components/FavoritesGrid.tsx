@@ -5,21 +5,25 @@ import ProductCard from './ProductCard'
 
 const FavoritesGrid = () => {
 
-    const { favoriteProducts, fetchFavoriteProducts } = useProductStore();
+    const { favoriteProducts, fetchFavoriteProducts, fetchProducts, products } = useProductStore();
     const [refreshing, setRefreshing] = useState(false);
 
     const onRefresh = async () => {
         setRefreshing(true);
-        await fetchFavoriteProducts();
+        await Promise.all([
+            fetchProducts(),
+            fetchFavoriteProducts()
+        ]);
         setRefreshing(false);
     }
 
 
     useEffect(() => {
-        const fetchFavorites = async () => {
+        const loadData = async () => {
+            await fetchProducts();
             await fetchFavoriteProducts();
         }
-        fetchFavorites();
+        loadData();
     }, [])
 
     return (
