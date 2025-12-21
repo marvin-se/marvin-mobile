@@ -26,7 +26,7 @@ export const authService = {
     },
 
     resetPassword: async (data: ResetPasswordRequest): Promise<void> => {
-        await apiClient.post("/auth/reset-password", data);
+        await apiClient.post("/auth/change-password", data);
     },
 
     verifyEmail: async (data: VerifyRequest): Promise<void> => {
@@ -34,7 +34,11 @@ export const authService = {
     },
 
     verifyResetCode: async (data: VerifyRequest): Promise<void> => {
-        await apiClient.post("/auth/verify", data);
+        await apiClient.post("/auth/verify-reset-code", data);
+    },
+
+    resend: async (data: ForgotPasswordRequest): Promise<void> => {
+        await apiClient.post("/auth/resend", data);
     },
 
     logout: async (): Promise<void> => {

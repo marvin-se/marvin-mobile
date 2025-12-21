@@ -36,7 +36,7 @@ apiClient.interceptors.response.use(
 
             return Promise.reject({
                 status,
-                message: data.message || "An error occurred",
+                message: data || "An error occurred",
                 errors: data?.errors || null
             })
         }

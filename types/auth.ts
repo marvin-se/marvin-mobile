@@ -31,9 +31,17 @@ export interface ForgotPasswordRequest {
     email: string;
 }
 
+export enum RequestType {
+    FORGOT_PASSWORD = "FORGOT_PASSWORD",
+    CHANGE_PASSWORD = "CHANGE_PASSWORD",
+}
+
 export interface ResetPasswordRequest {
+    email: string;
     token: string;
     newPassword: string;
+    confirmNewPassword: string;
+    type: RequestType;
 }
 
 export interface VerifyRequest {
