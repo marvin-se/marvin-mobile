@@ -40,9 +40,9 @@ const Verification = () => {
                     token: codeString
                 });
             } else {
-                await authService.verifyResetCode({ 
+                await authService.verifyResetCode({
                     email: params.email,
-                    token: codeString 
+                    token: codeString
                 });
             }
 
@@ -60,7 +60,7 @@ const Verification = () => {
                 } else {
                     router.push({
                         pathname: "/(auth)/reset-password",
-                        params: { code: codeString }
+                        params: { code: codeString, email: params.email }
                     });
                 }
             }, 800);
@@ -79,7 +79,11 @@ const Verification = () => {
         setIsResending(true);
 
         try {
-            await authService.resendCode({ type: isEmailVerification ? "email" : "reset" });
+            if (isEmailVerification) {
+                await authService.resend({ email: params.email });
+            } else {
+                await authService.forgotPassword({ email: params.email })
+            }
 
             Toast.show({
                 type: "success",
@@ -106,8 +110,8 @@ const Verification = () => {
             </View>
 
             <View>
-                <Button 
-                    title={isLoading ? "Verifying..." : "Verify & Continue"} 
+                <Button
+                    title={isLoading ? "Verifying..." : "Verify & Continue"}
                     onPress={handleVerify}
                     disabled={isLoading}
                 />
@@ -115,8 +119,8 @@ const Verification = () => {
                 <View className="mt-6">
                     <Text className="text-center text-[#182c53] mb-4">
                         Didn't receive the email?{" "}
-                        <Text 
-                            onPress={isResending ? undefined : handleResend} 
+                        <Text
+                            onPress={isResending ? undefined : handleResend}
                             className={`font-semibold ${isResending ? "text-gray-400" : "text-[#72c69b]"}`}
                         >
                             {isResending ? "Sending..." : "Resend Email"}
