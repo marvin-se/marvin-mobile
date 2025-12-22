@@ -23,7 +23,6 @@ const EditProfile = () => {
     const [lastName, setLastName] = useState("Doe");
     const email = "john.doe@university.edu"; // Read-only
     const [phone, setPhone] = useState("+1 (555) 123-4567");
-    const [bio, setBio] = useState("Computer Science student. Love tech and books!");
     const university = "Harvard University"; // Read-only
 
     const [avatar] = useState("https://i.pravatar.cc/150?img=12");
@@ -116,24 +115,6 @@ const EditProfile = () => {
                             onChangeText={setPhone}
                             keyboardType="numeric"
                         />
-
-                        <View className="mb-4">
-                            <Text className="text-[#182c53] text-base font-semibold ml-2 mb-2">
-                                Bio
-                            </Text>
-                            <View className="border border-gray-300 rounded-2xl bg-white">
-                                <TextInput
-                                    value={bio}
-                                    onChangeText={setBio}
-                                    multiline
-                                    numberOfLines={4}
-                                    textAlignVertical="top"
-                                    placeholder="Tell us about yourself..."
-                                    placeholderTextColor="#9ca3af"
-                                    className="px-4 py-3 text-gray-900 min-h-[120px]"
-                                />
-                            </View>
-                        </View>
 
                         <Button title="Save Changes" onPress={handleSave} />
 

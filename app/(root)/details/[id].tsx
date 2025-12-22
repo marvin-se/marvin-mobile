@@ -12,6 +12,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Image } from "expo-image";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 import { useProductStore } from "@/store/useProductStore";
+import { productService } from "@/api/services/product";
 import Toast from "react-native-toast-message";
 
 const { width } = Dimensions.get("window");
@@ -26,7 +27,25 @@ const Details = () => {
 
     const [selectedImageIndex, setSelectedImageIndex] = useState(0);
     const [showViews, setShowViews] = useState(true);
+    const [viewCount, setViewCount] = useState(product?.visitCount ?? 0);
     const fadeAnim = useRef(new Animated.Value(1)).current;
+
+    useEffect(() => {
+        const incrementViewCount = async () => {
+            try {
+                const productId = Number(id);
+                const updatedProduct = await productService.getProductById(productId);
+                // API'den dönen güncel viewCount'u set et
+                setViewCount(updatedProduct.visitCount ?? 0);
+            } catch (error) {
+                console.log("View count increment failed:", error);
+            }
+        };
+
+        if (id) {
+            incrementViewCount();
+        }
+    }, [id]);
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -50,23 +69,11 @@ const Details = () => {
     const handleFavoriteToggle = async () => {
         if (!product) return;
 
-        const userId = product.sellerId;
-
         try {
             if (isFavorite) {
-                await removeFavoriteProduct(userId, product.id);
-                Toast.show({
-                    type: "success",
-                    text1: "Removed from Favorites",
-                    visibilityTime: 2000,
-                });
+                await removeFavoriteProduct(product.id);
             } else {
-                await addFavoriteProduct(userId, product.id);
-                Toast.show({
-                    type: "success",
-                    text1: "Added to Favorites",
-                    visibilityTime: 2000,
-                });
+                await addFavoriteProduct(product.id);
             }
         } catch (err: any) {
             Toast.show({
@@ -153,9 +160,8 @@ const Details = () => {
                             {images.map((_, index) => (
                                 <View
                                     key={index}
-                                    className={`w-2 h-2 rounded-full ${
-                                        selectedImageIndex === index ? "bg-white" : "bg-white/50"
-                                    }`}
+                                    className={`w-2 h-2 rounded-full ${selectedImageIndex === index ? "bg-white" : "bg-white/50"
+                                        }`}
                                 />
                             ))}
                         </View>
@@ -184,8 +190,8 @@ const Details = () => {
                                 {product.universityName}
                             </Text>
                         </View>
-                        
-                        <Animated.View 
+
+                        <Animated.View
                             style={{ opacity: fadeAnim }}
                             className="flex-row items-center gap-1"
                         >

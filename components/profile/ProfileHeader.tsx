@@ -9,7 +9,6 @@ interface ProfileHeaderProps {
     email: string;
     avatar: string;
     university: string;
-    bio: string;
     showBackButton?: boolean;
     showEditButton?: boolean;
     onEditPress?: () => void;
@@ -20,7 +19,6 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
     email,
     avatar,
     university,
-    bio,
     showBackButton = false,
     showEditButton = false,
     onEditPress,
@@ -48,7 +46,6 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
             <Text className="text-2xl font-bold text-textPrimary mt-4">{name}</Text>
             <Text className="text-base text-textSecondary mt-1">{email}</Text>
             <Text className="text-sm text-textSecondary mt-1">{university}</Text>
-            <Text className="text-sm text-textSecondary text-center mt-1 px-20">{bio}</Text>
 
             {showEditButton && onEditPress && (
                 <TouchableOpacity

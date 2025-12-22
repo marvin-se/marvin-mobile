@@ -3,6 +3,11 @@ import { productService } from '@/api/services/product';
 import { CreateProductRequest, FilterParams, Product } from '@/types/api';
 import { create } from 'zustand';
 
+interface UserStats {
+    activeListings: number;
+    soldItems: number;
+}
+
 interface ProductStore {
     products: Product[];
     favoriteProducts: Product[];
@@ -18,6 +23,8 @@ interface ProductStore {
     removeFavoriteProduct: (productId: number) => Promise<void>;
     filterProducts: (params: FilterParams) => Promise<void>;
     createProduct: (data: CreateProductRequest) => Promise<Product>;
+    getUserStats: (userId: number) => UserStats;
+    getUserListings: (userId: number) => Product[];
     clearCache: () => void;
 }
 
@@ -207,6 +214,21 @@ export const useProductStore = create<ProductStore>((set, get) => ({
             });
             throw error;
         }
+    },
+
+    getUserStats: (userId: number): UserStats => {
+        const { products } = get();
+        const userProducts = products.filter(p => p.sellerId === userId);
+
+        return {
+            activeListings: userProducts.filter(p => p.status === "ACTIVE" || !p.status).length,
+            soldItems: userProducts.filter(p => p.status === "SOLD").length,
+        };
+    },
+
+    getUserListings: (userId: number): Product[] => {
+        const { products } = get();
+        return products.filter(p => p.sellerId === userId);
     },
 
     clearCache: () => {
