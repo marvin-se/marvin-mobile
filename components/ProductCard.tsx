@@ -4,6 +4,7 @@ import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import React from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
+import { useAuthStore } from '@/store/useAuthStore';
 
 interface ProductCardProps {
     id: number;
@@ -16,11 +17,11 @@ interface ProductCardProps {
     favoriteCount?: number | null;
 }
 
-const CURRENT_USER_ID = 1;
-
 const ProductCard = ({ id, title, price, images, sellerId, isFavorite, visitCount, favoriteCount }: ProductCardProps) => {
 
     const { addFavoriteProduct, removeFavoriteProduct, fetchFavoriteProducts } = useProductStore();
+
+    const userId = useAuthStore((state) => state.user?.id);
 
     const handleProductPress = () => {
         router.push(`/details/${id}`);
@@ -46,7 +47,7 @@ const ProductCard = ({ id, title, price, images, sellerId, isFavorite, visitCoun
                     style={{ width: '100%', height: 200, borderRadius: 16 }}
                     contentFit='cover'
                 />
-                {sellerId !== CURRENT_USER_ID && (
+                {sellerId !== userId && (
                     <TouchableOpacity
                         onPress={() => handleFavoriteToggle(id)}
                         className='absolute top-3 right-3 bg-white/90 p-2 rounded-full z-50'
