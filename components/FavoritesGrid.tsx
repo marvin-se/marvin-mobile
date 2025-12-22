@@ -1,25 +1,29 @@
-import React, { useEffect, useState } from 'react'
-import ProductCard from './ProductCard'
-import { FlatList, RefreshControl, View } from 'react-native'
 import { useProductStore } from '@/store/useProductStore'
+import React, { useEffect, useState } from 'react'
+import { FlatList, RefreshControl, View } from 'react-native'
+import ProductCard from './ProductCard'
 
 const FavoritesGrid = () => {
 
-    const { favoriteProducts, fetchFavoriteProducts } = useProductStore();
+    const { favoriteProducts, fetchFavoriteProducts, fetchProducts, products } = useProductStore();
     const [refreshing, setRefreshing] = useState(false);
 
     const onRefresh = async () => {
         setRefreshing(true);
-        await fetchFavoriteProducts(1);
+        await Promise.all([
+            fetchProducts(),
+            fetchFavoriteProducts()
+        ]);
         setRefreshing(false);
     }
 
 
     useEffect(() => {
-        const fetchFavorites = async () => {
-            await fetchFavoriteProducts(1);
+        const loadData = async () => {
+            await fetchProducts();
+            await fetchFavoriteProducts();
         }
-        fetchFavorites();
+        loadData();
     }, [])
 
     return (

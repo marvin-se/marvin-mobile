@@ -2,20 +2,19 @@ import { FavouritesResponse, Product } from "@/types/api";
 import apiClient from "../config";
 
 export const favouritesService = {
-    getFavourites: async (userId: number): Promise<FavouritesResponse[]> => {
-        const response = await apiClient.get("/favourites/" + userId);
+    getFavourites: async (): Promise<FavouritesResponse[]> => {
+        const response = await apiClient.get("/favourites/getAll");
         return response.data;
     },
 
-    addFavourite: async (userId: number, productId: number): Promise<FavouritesResponse> => {
-        const response = await apiClient.post("/favourites/" + userId, {
-            userId,
+    addFavourite: async (productId: number): Promise<FavouritesResponse> => {
+        const response = await apiClient.post("/favourites/add", {
             productId
         });
         return response.data;
     },
 
-    removeFavourite: async (userId: number, productId: number): Promise<void> => {
-        await apiClient.delete("/favourites/" + userId + "/" + productId);
+    removeFavourite: async (productId: number): Promise<void> => {
+        await apiClient.delete("/favourites/" + productId);
     }
 }
