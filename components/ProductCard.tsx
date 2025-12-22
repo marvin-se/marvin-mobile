@@ -10,10 +10,13 @@ interface ProductCardProps {
     title: string;
     price: number;
     images: string[] | null;
+    sellerId: number;
     isFavorite?: boolean;
 }
 
-const ProductCard = ({ id, title, price, images, isFavorite }: ProductCardProps) => {
+const CURRENT_USER_ID = 1;
+
+const ProductCard = ({ id, title, price, images, sellerId, isFavorite }: ProductCardProps) => {
 
     const { addFavoriteProduct, removeFavoriteProduct, fetchFavoriteProducts } = useProductStore();
 
@@ -41,17 +44,19 @@ const ProductCard = ({ id, title, price, images, isFavorite }: ProductCardProps)
                     style={{ width: '100%', height: 200, borderRadius: 16 }}
                     contentFit='cover'
                 />
-                <TouchableOpacity
-                    onPress={() => handleFavoriteToggle(id)}
-                    className='absolute top-3 right-3 bg-white/90 p-2 rounded-full z-50'
-                    activeOpacity={0.5}
-                >
-                    <Ionicons
-                        name={isFavorite ? 'heart' : 'heart-outline'}
-                        size={20}
-                        color={isFavorite ? 'red' : 'black'}
-                    />
-                </TouchableOpacity>
+                {sellerId !== CURRENT_USER_ID && (
+                    <TouchableOpacity
+                        onPress={() => handleFavoriteToggle(id)}
+                        className='absolute top-3 right-3 bg-white/90 p-2 rounded-full z-50'
+                        activeOpacity={0.5}
+                    >
+                        <Ionicons
+                            name={isFavorite ? 'heart' : 'heart-outline'}
+                            size={20}
+                            color={isFavorite ? 'red' : 'black'}
+                        />
+                    </TouchableOpacity>
+                )}
             </View>
 
             <View className="p-3">
