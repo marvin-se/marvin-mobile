@@ -8,6 +8,11 @@ export const productService = {
         return response.data
     },
 
+    getProductById: async (id: number): Promise<Product> => {
+        const response = await apiClient.get<Product>(`/listings/${id}`)
+        return response.data
+    },
+
     createProduct : async(data: CreateProductRequest): Promise<Product> => {
         const response = await apiClient.post<Product>("/listings", data)
         return response.data

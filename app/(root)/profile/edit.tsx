@@ -6,7 +6,6 @@ import {
     TouchableOpacity,
     KeyboardAvoidingView,
     Platform,
-    TextInput,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -15,27 +14,67 @@ import { MaterialIcons } from "@expo/vector-icons";
 import Toast from "react-native-toast-message";
 import InputField from "@/components/auth/InputField";
 import Button from "@/components/auth/Button";
+import { useAuthStore } from "@/store/useAuthStore";
+import { authService } from "@/api/services/auth";
 
 const EditProfile = () => {
     const router = useRouter();
+    const { user, setUser } = useAuthStore();
 
-    const [firstName, setFirstName] = useState("John");
-    const [lastName, setLastName] = useState("Doe");
-    const email = "john.doe@university.edu"; // Read-only
-    const [phone, setPhone] = useState("+1 (555) 123-4567");
-    const [bio, setBio] = useState("Computer Science student. Love tech and books!");
-    const university = "Harvard University"; // Read-only
+    const [fullName, setFullName] = useState(user?.fullName || "");
+    const [phone, setPhone] = useState(user?.phoneNumber || "");
+    const [isLoading, setIsLoading] = useState(false);
 
-    const [avatar] = useState("https://i.pravatar.cc/150?img=12");
+    const email = user?.email || "";
+    const university = user?.universityName || "";
+    const avatar = user?.profilePicUrl || "https://i.pravatar.cc/150";
 
-    const handleSave = () => {
-        Toast.show({
-            type: "success",
-            text1: "Profile Updated",
-            text2: "Your profile has been successfully updated.",
-        });
-        router.back();
+    const handleSave = async () => {
+        if (!fullName.trim()) {
+            Toast.show({
+                type: "error",
+                text1: "Error",
+                text2: "Name cannot be empty.",
+            });
+            return;
+        }
+
+        setIsLoading(true);
+
+        try {
+            const updatedUser = await authService.updateProfile({ 
+                fullName, 
+                phoneNumber: phone 
+            });
+
+            setUser(updatedUser);
+
+            Toast.show({
+                type: "success",
+                text1: "Profile Updated",
+                text2: "Your profile has been successfully updated.",
+            });
+            router.back();
+        } catch (error: any) {
+            Toast.show({
+                type: "error",
+                text1: "Update Failed",
+                text2: error.message || "Could not update profile.",
+            });
+        } finally {
+            setIsLoading(false);
+        }
     };
+
+    if (!user) {
+        return (
+            <SafeAreaView className="bg-background h-full">
+                <View className="flex-1 items-center justify-center">
+                    <Text className="text-textSecondary">Loading...</Text>
+                </View>
+            </SafeAreaView>
+        );
+    }
 
     return (
         <SafeAreaView className="bg-background h-full">
@@ -71,26 +110,14 @@ const EditProfile = () => {
                                 <MaterialIcons name="camera-alt" size={20} color="white" />
                             </TouchableOpacity>
                         </View>
-                        <Text className="text-textSecondary mt-2">Tap to change photo</Text>
                     </View>
 
                     <View className="px-5">
-                        <View className="flex-row gap-3">
-                            <View className="flex-1">
-                                <InputField
-                                    label="First Name"
-                                    value={firstName}
-                                    onChangeText={setFirstName}
-                                />
-                            </View>
-                            <View className="flex-1">
-                                <InputField
-                                    label="Last Name"
-                                    value={lastName}
-                                    onChangeText={setLastName}
-                                />
-                            </View>
-                        </View>
+                        <InputField
+                            label="Full Name"
+                            value={fullName}
+                            onChangeText={setFullName}
+                        />
 
                         <View className="mb-4">
                             <Text className="text-[#182c53] text-base font-semibold ml-2 mb-2">
@@ -117,25 +144,11 @@ const EditProfile = () => {
                             keyboardType="numeric"
                         />
 
-                        <View className="mb-4">
-                            <Text className="text-[#182c53] text-base font-semibold ml-2 mb-2">
-                                Bio
-                            </Text>
-                            <View className="border border-gray-300 rounded-2xl bg-white">
-                                <TextInput
-                                    value={bio}
-                                    onChangeText={setBio}
-                                    multiline
-                                    numberOfLines={4}
-                                    textAlignVertical="top"
-                                    placeholder="Tell us about yourself..."
-                                    placeholderTextColor="#9ca3af"
-                                    className="px-4 py-3 text-gray-900 min-h-[120px]"
-                                />
-                            </View>
-                        </View>
-
-                        <Button title="Save Changes" onPress={handleSave} />
+                        <Button 
+                            title={isLoading ? "Saving..." : "Save Changes"} 
+                            onPress={handleSave}
+                            disabled={isLoading}
+                        />
 
                         <View className="h-4" />
 
