@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
     View,
     Text,
     ScrollView,
     TouchableOpacity,
     Dimensions,
-    Alert,
+    Animated,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -19,28 +19,66 @@ const { width } = Dimensions.get("window");
 const Details = () => {
     const { id } = useLocalSearchParams();
     const router = useRouter();
-    const products = useProductStore((state) => state.products);
-    const toggleFavorite = useProductStore((state) => state.toggleFavorite);
+    const { products, favoriteProducts, addFavoriteProduct, removeFavoriteProduct } = useProductStore();
 
-    const product = products.find((p) => p.id === id);
+    const product = products.find((p) => p.id === Number(id));
+    const isFavorite = favoriteProducts.some(p => p.id === Number(id));
 
     const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+    const [showViews, setShowViews] = useState(true);
+    const fadeAnim = useRef(new Animated.Value(1)).current;
 
-    const productDetails = {
-        description:
-            "This item is in excellent condition and has been well-maintained. Perfect for students looking for quality products at affordable prices. Don't miss this opportunity!",
-        condition: "Like New",
-        location: "Harvard Campus - Building C",
-        postedDate: "2025-12-10T14:30:00",
-        views: 156,
-        images: [
-            product?.image || "https://picsum.photos/id/0/400/400",
-            "https://picsum.photos/id/1/400/400",
-            "https://picsum.photos/id/2/400/400",
-        ],
-        sellerRating: 4.8,
-        sellerSales: 24,
-        sellerAvatar: "https://i.pravatar.cc/150?img=33",
+    useEffect(() => {
+        const interval = setInterval(() => {
+            Animated.timing(fadeAnim, {
+                toValue: 0,
+                duration: 200,
+                useNativeDriver: true,
+            }).start(() => {
+                setShowViews(prev => !prev);
+                Animated.timing(fadeAnim, {
+                    toValue: 1,
+                    duration: 200,
+                    useNativeDriver: true,
+                }).start();
+            });
+        }, 3000);
+
+        return () => clearInterval(interval);
+    }, []);
+
+    const handleFavoriteToggle = async () => {
+        if (!product) return;
+
+        const userId = product.sellerId;
+
+        try {
+            if (isFavorite) {
+                await removeFavoriteProduct(userId, product.id);
+                Toast.show({
+                    type: "success",
+                    text1: "Removed from Favorites",
+                    visibilityTime: 2000,
+                });
+            } else {
+                await addFavoriteProduct(userId, product.id);
+                Toast.show({
+                    type: "success",
+                    text1: "Added to Favorites",
+                    visibilityTime: 2000,
+                });
+            }
+        } catch (err: any) {
+            Toast.show({
+                type: "error",
+                text1: "Error",
+                text2: err.message || "Could not update favorites",
+            });
+        }
+    };
+
+    const handleContactSeller = () => {
+        router.push(`/chats/${product?.sellerId}`);
     };
 
     if (!product) {
@@ -63,35 +101,7 @@ const Details = () => {
         );
     }
 
-    const handleFavoriteToggle = () => {
-        toggleFavorite(product.id);
-        Toast.show({
-            type: "success",
-            text1: product.isFavorite ? "Removed from Favorites" : "Added to Favorites",
-            visibilityTime: 2000,
-        });
-    };
-
-    const handleContactSeller = () => {
-        router.push(`/chats/1`); // Mock chat id
-    };
-
-    const handleMakeOffer = () => {
-        Alert.alert(
-            "Make an Offer",
-            "This feature will allow you to negotiate the price with the seller.",
-            [{ text: "OK" }]
-        );
-    };
-
-    const formatDate = (dateString: string) => {
-        const date = new Date(dateString);
-        return date.toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-        });
-    };
+    const images = product.images?.length ? product.images : ["https://picsum.photos/400/400"];
 
     return (
         <SafeAreaView className="bg-background h-full">
@@ -108,7 +118,7 @@ const Details = () => {
                             setSelectedImageIndex(index);
                         }}
                     >
-                        {productDetails.images.map((img, index) => (
+                        {images.map((img, index) => (
                             <Image
                                 key={index}
                                 source={{ uri: img }}
@@ -132,21 +142,24 @@ const Details = () => {
                         activeOpacity={0.7}
                     >
                         <Ionicons
-                            name={product.isFavorite ? "heart" : "heart-outline"}
+                            name={isFavorite ? "heart" : "heart-outline"}
                             size={24}
-                            color={product.isFavorite ? "red" : "#2C3E50"}
+                            color={isFavorite ? "red" : "#2C3E50"}
                         />
                     </TouchableOpacity>
 
-                    <View className="absolute bottom-4 left-0 right-0 flex-row justify-center gap-2">
-                        {productDetails.images.map((_, index) => (
-                            <View
-                                key={index}
-                                className={`w-2 h-2 rounded-full ${selectedImageIndex === index ? "bg-white" : "bg-white/50"
+                    {images.length > 1 && (
+                        <View className="absolute bottom-4 left-0 right-0 flex-row justify-center gap-2">
+                            {images.map((_, index) => (
+                                <View
+                                    key={index}
+                                    className={`w-2 h-2 rounded-full ${
+                                        selectedImageIndex === index ? "bg-white" : "bg-white/50"
                                     }`}
-                            />
-                        ))}
-                    </View>
+                                />
+                            ))}
+                        </View>
+                    )}
                 </View>
 
                 <View className="bg-white px-5 py-4">
@@ -168,15 +181,30 @@ const Details = () => {
                         <View className="flex-row items-center gap-1">
                             <MaterialIcons name="location-on" size={16} color="#7F8C8D" />
                             <Text className="text-sm text-textSecondary">
-                                {productDetails.location}
+                                {product.universityName}
                             </Text>
                         </View>
-                        <View className="flex-row items-center gap-1">
-                            <MaterialIcons name="visibility" size={16} color="#7F8C8D" />
-                            <Text className="text-sm text-textSecondary">
-                                {productDetails.views} views
-                            </Text>
-                        </View>
+                        
+                        <Animated.View 
+                            style={{ opacity: fadeAnim }}
+                            className="flex-row items-center gap-1"
+                        >
+                            {showViews ? (
+                                <>
+                                    <MaterialIcons name="visibility" size={16} color="#7F8C8D" />
+                                    <Text className="text-sm text-textSecondary">
+                                        {product.visitCount ?? 0} views
+                                    </Text>
+                                </>
+                            ) : (
+                                <>
+                                    <Ionicons name="heart" size={16} color="#7F8C8D" />
+                                    <Text className="text-sm text-textSecondary">
+                                        {product.favoriteCount ?? 0} likes
+                                    </Text>
+                                </>
+                            )}
+                        </Animated.View>
                     </View>
                 </View>
 
@@ -185,75 +213,23 @@ const Details = () => {
                         Description
                     </Text>
                     <Text className="text-base text-textSecondary leading-6">
-                        {productDetails.description}
+                        {product.description}
                     </Text>
                 </View>
 
-                <View className="bg-white px-5 py-4 mt-2">
-                    <Text className="text-base font-semibold text-textPrimary mb-3">
-                        Seller Information
-                    </Text>
-                    <TouchableOpacity
-                        onPress={() => router.push(`/profile/${product.seller}`)}
-                        className="flex-row items-center gap-3"
-                        activeOpacity={0.7}
-                    >
-                        <Image
-                            source={{ uri: productDetails.sellerAvatar }}
-                            style={{ width: 50, height: 50, borderRadius: 25 }}
-                            contentFit="cover"
-                        />
-                        <View className="flex-1">
-                            <Text className="text-base font-semibold text-textPrimary">
-                                {product.seller}
-                            </Text>
-                            <View className="flex-row items-center gap-2 mt-1">
-                                <View className="flex-row items-center">
-                                    <Ionicons name="star" size={14} color="#72C69B" />
-                                    <Text className="text-sm text-textSecondary ml-1">
-                                        {productDetails.sellerRating}
-                                    </Text>
-                                </View>
-                                <Text className="text-sm text-textSecondary">•</Text>
-                                <Text className="text-sm text-textSecondary">
-                                    {productDetails.sellerSales} sales
-                                </Text>
-                            </View>
-                        </View>
-                        <MaterialIcons name="chevron-right" size={24} color="#7F8C8D" />
-                    </TouchableOpacity>
-                </View>
-
-                <View className="px-5 py-3">
-                    <Text className="text-xs text-textSecondary text-center">
-                        Posted on {formatDate(productDetails.postedDate)}
-                    </Text>
-                </View>
-
-                <View className="h-20" />
+                <View className="h-24" />
             </ScrollView>
 
             <View className="absolute bottom-0 left-0 right-0 bg-white border-t border-borderPrimary px-5 py-8">
-                <View className="flex-row gap-3">
-                    <TouchableOpacity
-                        onPress={handleMakeOffer}
-                        className="flex-1 bg-white border-2 border-primary py-3 rounded-xl"
-                        activeOpacity={0.7}
-                    >
-                        <Text className="text-primary text-center font-semibold text-base">
-                            Make Offer
-                        </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        onPress={handleContactSeller}
-                        className="flex-1 bg-primary py-3 rounded-xl"
-                        activeOpacity={0.7}
-                    >
-                        <Text className="text-white text-center font-semibold text-base">
-                            Contact Seller
-                        </Text>
-                    </TouchableOpacity>
-                </View>
+                <TouchableOpacity
+                    onPress={handleContactSeller}
+                    className="bg-primary py-4 rounded-xl"
+                    activeOpacity={0.7}
+                >
+                    <Text className="text-white text-center font-semibold text-base">
+                        Contact Seller
+                    </Text>
+                </TouchableOpacity>
             </View>
         </SafeAreaView>
     );
