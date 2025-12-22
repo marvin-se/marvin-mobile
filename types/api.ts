@@ -1,11 +1,14 @@
 export interface Product {
     id: number;
     title: string;
+    sellerId: number;
     description: string;
     price: number;
     category: string
     universityName: string;
     images: string[] | null;
+    isFavourite: boolean;
+    status: string;
     favoriteCount: number | null;
     visitCount: number | null;
 }
