@@ -9,6 +9,7 @@ interface ProductStore {
     favoriteProductIds: number[];
     cache: Record<string, Product[]>;
     isLoading: boolean;
+    isProductsLoading: boolean;
     error: string | null;
 
     fetchProducts: () => Promise<void>;
@@ -26,6 +27,7 @@ export const useProductStore = create<ProductStore>((set, get) => ({
     favoriteProductIds: [],
     cache: {},
     isLoading: false,
+    isProductsLoading: false,
     error: null,
 
     fetchProducts: async () => {
@@ -40,19 +42,21 @@ export const useProductStore = create<ProductStore>((set, get) => ({
             return;
         }
 
-        set({ isLoading: true, error: null });
+        set({ isLoading: true, isProductsLoading: true, error: null });
         try {
             const products = await productService.getProducts();
             set({
                 products,
                 cache: { ...get().cache, "ALL": products },
                 favoriteProducts: products.filter(p => get().favoriteProductIds.includes(p.id)),
-                isLoading: false
+                isLoading: false,
+                isProductsLoading: false
             });
         } catch (error: any) {
             set({
                 error: error.message || 'Failed to fetch products',
-                isLoading: false
+                isLoading: false,
+                isProductsLoading: false
             });
         }
     },
@@ -67,7 +71,7 @@ export const useProductStore = create<ProductStore>((set, get) => ({
 
             const favoriteProducts = products.length > 0
                 ? products.filter(product => favoriteids.includes(product.id))
-                : []; 
+                : [];
 
             set({
                 favoriteProductIds: favoriteids,
