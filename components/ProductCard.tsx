@@ -12,11 +12,13 @@ interface ProductCardProps {
     images: string[] | null;
     sellerId: number;
     isFavorite?: boolean;
+    visitCount?: number | null;
+    favoriteCount?: number | null;
 }
 
 const CURRENT_USER_ID = 1;
 
-const ProductCard = ({ id, title, price, images, sellerId, isFavorite }: ProductCardProps) => {
+const ProductCard = ({ id, title, price, images, sellerId, isFavorite, visitCount, favoriteCount }: ProductCardProps) => {
 
     const { addFavoriteProduct, removeFavoriteProduct, fetchFavoriteProducts } = useProductStore();
 
@@ -66,12 +68,23 @@ const ProductCard = ({ id, title, price, images, sellerId, isFavorite }: Product
                 >
                     {title}
                 </Text>
-                <Text className="text-lg font-bold text-primary mb-1">
+                <View className="flex-row items-center mb-2">
+                    <View className="flex-row items-center mr-3">
+                        <Ionicons name="eye-outline" size={14} color="#6B7280" />
+                        <Text className="text-xs text-textSecondary ml-1">
+                            {visitCount ?? 0}
+                        </Text>
+                    </View>
+                    <View className="flex-row items-center">
+                        <Ionicons name="heart-outline" size={14} color="#6B7280" />
+                        <Text className="text-xs text-textSecondary ml-1">
+                            {favoriteCount ?? 0}
+                        </Text>
+                    </View>
+                </View>
+                <Text className="text-lg font-bold text-primary">
                     ${price}
                 </Text>
-                {/* <Text className="text-sm text-textSecondary" numberOfLines={1}>
-                    Sold by {seller}
-                </Text> */}
             </View>
         </TouchableOpacity >
     )
