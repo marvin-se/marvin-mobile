@@ -10,9 +10,11 @@ import LinkText from "@/components/auth/LinkText";
 import { validateEmail } from "@/utils/validation";
 import { authService } from "@/api/services/auth";
 import { setToken } from "@/utils/storage";
+import { useAuthStore } from "@/store/useAuthStore";
 
 const SignIn = () => {
     const router = useRouter();
+    const { setUser } = useAuthStore();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
@@ -42,7 +44,13 @@ const SignIn = () => {
         try {
             const response = await authService.signIn({ email, password });
         
-            await setToken(response.token);
+            if (response?.token) {
+                await setToken(response.token);
+            }
+
+            if (response?.user) {
+                setUser(response.user);
+            }
 
             Toast.show({
                 type: "success",
@@ -50,7 +58,7 @@ const SignIn = () => {
                 text2: "You have successfully signed in.",
             });
 
-            router.push("/");
+            router.replace("/");
         } catch (error: any) {
             Toast.show({
                 type: "error",

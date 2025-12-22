@@ -12,6 +12,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Image } from "expo-image";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 import { useProductStore } from "@/store/useProductStore";
+import { useAuthStore } from "@/store/useAuthStore";
 import { productService } from "@/api/services/product";
 import Toast from "react-native-toast-message";
 
@@ -21,9 +22,11 @@ const Details = () => {
     const { id } = useLocalSearchParams();
     const router = useRouter();
     const { products, favoriteProducts, addFavoriteProduct, removeFavoriteProduct } = useProductStore();
+    const { user } = useAuthStore();
 
     const product = products.find((p) => p.id === Number(id));
     const isFavorite = favoriteProducts.some(p => p.id === Number(id));
+    const isOwnProduct = product?.sellerId === user?.id;
 
     const [selectedImageIndex, setSelectedImageIndex] = useState(0);
     const [showViews, setShowViews] = useState(true);
@@ -35,7 +38,6 @@ const Details = () => {
             try {
                 const productId = Number(id);
                 const updatedProduct = await productService.getProductById(productId);
-                // API'den dönen güncel viewCount'u set et
                 setViewCount(updatedProduct.visitCount ?? 0);
             } catch (error) {
                 console.log("View count increment failed:", error);
@@ -67,7 +69,7 @@ const Details = () => {
     }, []);
 
     const handleFavoriteToggle = async () => {
-        if (!product) return;
+        if (!product || isOwnProduct) return;
 
         try {
             if (isFavorite) {
@@ -85,6 +87,7 @@ const Details = () => {
     };
 
     const handleContactSeller = () => {
+        if (isOwnProduct) return;
         router.push(`/chats/${product?.sellerId}`);
     };
 
@@ -143,17 +146,19 @@ const Details = () => {
                         <MaterialIcons name="arrow-back" size={24} color="#2C3E50" />
                     </TouchableOpacity>
 
-                    <TouchableOpacity
-                        onPress={handleFavoriteToggle}
-                        className="absolute top-4 right-4 bg-white/90 p-2 rounded-full"
-                        activeOpacity={0.7}
-                    >
-                        <Ionicons
-                            name={isFavorite ? "heart" : "heart-outline"}
-                            size={24}
-                            color={isFavorite ? "red" : "#2C3E50"}
-                        />
-                    </TouchableOpacity>
+                    {!isOwnProduct && (
+                        <TouchableOpacity
+                            onPress={handleFavoriteToggle}
+                            className="absolute top-4 right-4 bg-white/90 p-2 rounded-full"
+                            activeOpacity={0.7}
+                        >
+                            <Ionicons
+                                name={isFavorite ? "heart" : "heart-outline"}
+                                size={24}
+                                color={isFavorite ? "red" : "#2C3E50"}
+                            />
+                        </TouchableOpacity>
+                    )}
 
                     {images.length > 1 && (
                         <View className="absolute bottom-4 left-0 right-0 flex-row justify-center gap-2">
@@ -199,7 +204,7 @@ const Details = () => {
                                 <>
                                     <MaterialIcons name="visibility" size={16} color="#7F8C8D" />
                                     <Text className="text-sm text-textSecondary">
-                                        {product.visitCount ?? 0} views
+                                        {viewCount} views
                                     </Text>
                                 </>
                             ) : (
@@ -229,11 +234,12 @@ const Details = () => {
             <View className="absolute bottom-0 left-0 right-0 bg-white border-t border-borderPrimary px-5 py-8">
                 <TouchableOpacity
                     onPress={handleContactSeller}
-                    className="bg-primary py-4 rounded-xl"
-                    activeOpacity={0.7}
+                    className={`py-4 rounded-xl ${isOwnProduct ? "bg-gray-300" : "bg-primary"}`}
+                    activeOpacity={isOwnProduct ? 1 : 0.7}
+                    disabled={isOwnProduct}
                 >
-                    <Text className="text-white text-center font-semibold text-base">
-                        Contact Seller
+                    <Text className={`text-center font-semibold text-base ${isOwnProduct ? "text-gray-500" : "text-white"}`}>
+                        {isOwnProduct ? "Your Listing" : "Contact Seller"}
                     </Text>
                 </TouchableOpacity>
             </View>

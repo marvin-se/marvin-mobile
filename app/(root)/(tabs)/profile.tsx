@@ -3,23 +3,24 @@ import ProfileMenuItem from "@/components/profile/ProfileMenuItem";
 import ProfileSection from "@/components/profile/ProfileSection";
 import StatCard from "@/components/profile/StatCard";
 import { useRouter } from "expo-router";
-import { Alert, ScrollView, View } from "react-native";
+import { Alert, ScrollView, View, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useAuthStore } from "@/store/useAuthStore";
+import { useProductStore } from "@/store/useProductStore";
+import { useEffect } from "react";
 
 const Profile = () => {
     const router = useRouter();
+    const { user, logout } = useAuthStore();
+    const { products, fetchProducts } = useProductStore();
 
-    const user = {
-        name: "John Doe",
-        email: "john.doe@university.edu",
-        avatar: "https://i.pravatar.cc/150?img=12",
-        university: "Harvard University",
-        bio: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum mollis aliquam neque, id pulvinar nisl tincidunt et. Vestibulum tincidunt libero.",
-        stats: {
-            listings: 12,
-            sold: 8,
-            bought: 15,
-        },
+    useEffect(() => {
+        fetchProducts();
+    }, []);
+
+    const userStats = {
+        activeListings: products.filter(p => p.sellerId === user?.id && p.status !== "SOLD").length,
+        soldItems: products.filter(p => p.sellerId === user?.id && p.status === "SOLD").length,
     };
 
     const handleLogout = () => {
@@ -31,29 +32,42 @@ const Profile = () => {
                 {
                     text: "Logout",
                     style: "destructive",
-                    onPress: () => router.replace("/(auth)/sign-in"),
+                    onPress: async () => {
+                        await logout();
+                        router.replace("/(auth)/sign-in");
+                    },
                 },
             ]
         );
     };
 
+    if (!user) {
+        return (
+            <SafeAreaView className="bg-background h-full">
+                <View className="flex-1 items-center justify-center">
+                    <Text className="text-textSecondary">
+                        Loading...
+                    </Text>
+                </View>
+            </SafeAreaView>
+        );
+    }
+
     return (
         <SafeAreaView className="bg-background h-full">
             <ScrollView showsVerticalScrollIndicator={false}>
                 <ProfileHeader
-                    name={user.name}
+                    name={user.fullName}
                     email={user.email}
-                    avatar={user.avatar}
-                    university={user.university}
-                    bio={user.bio}
+                    avatar={user.profilePicUrl || "https://i.pravatar.cc/150"}
+                    university={user.universityName}
                     showEditButton
                     onEditPress={() => router.push("/profile/edit")}
                 />
 
                 <View className="flex-row gap-3 px-5 mt-6">
-                    <StatCard label="Active Listings" value={user.stats.listings} />
-                    <StatCard label="Sold Items" value={user.stats.sold} />
-                    <StatCard label="Purchased" value={user.stats.bought} />
+                    <StatCard label="Active Listings" value={userStats.activeListings} />
+                    <StatCard label="Sold Items" value={userStats.soldItems} />
                 </View>
 
                 <ProfileSection title="My Items">

@@ -26,36 +26,42 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
     const router = useRouter();
 
     return (
-        <View className="items-center py-6 bg-white border-b border-borderPrimary">
+        <View className="py-6 px-5 bg-white border-b border-borderPrimary relative">
             {showBackButton && (
                 <TouchableOpacity
-                    className="absolute left-5 top-6"
                     onPress={() => router.back()}
                     activeOpacity={0.5}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    style={{ position: 'absolute', left: 20, top: 24, zIndex: 10 }}
                 >
                     <MaterialIcons name="arrow-back" size={28} color="#2C3E50" />
                 </TouchableOpacity>
             )}
 
-            <Image
-                source={{ uri: avatar }}
-                style={{ width: 100, height: 100, borderRadius: 50 }}
-                contentFit="cover"
-            />
-
-            <Text className="text-2xl font-bold text-textPrimary mt-4">{name}</Text>
-            <Text className="text-base text-textSecondary mt-1">{email}</Text>
-            <Text className="text-sm text-textSecondary mt-1">{university}</Text>
-
             {showEditButton && onEditPress && (
                 <TouchableOpacity
                     onPress={onEditPress}
-                    className="mt-4 bg-primary px-6 py-2 rounded-full"
                     activeOpacity={0.5}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    style={{ position: 'absolute', right: 20, top: 24, zIndex: 10 }}
                 >
-                    <Text className="text-white font-semibold">Edit Profile</Text>
+                    <MaterialIcons name="edit" size={24} color="#72C69B" />
                 </TouchableOpacity>
             )}
+
+            <View className="flex-row justify-between items-center">
+                <Image
+                    source={{ uri: avatar }}
+                    style={{ width: 80, height: 80, borderRadius: 40 }}
+                    contentFit="cover"
+                />
+
+                <View className="flex-1 ml-4">
+                    <Text className="text-xl font-bold text-textPrimary">{name}</Text>
+                    <Text className="text-sm text-textSecondary mt-1">{email}</Text>
+                    <Text className="text-sm text-textSecondary mt-1">{university}</Text>
+                </View>
+            </View>
         </View>
     );
 };
