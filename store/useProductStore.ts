@@ -42,20 +42,22 @@ export const useProductStore = create<ProductStore>((set, get) => ({
 
         if (cache['ALL']) {
             const allProducts = cache['ALL'];
+            const activeProducts = allProducts.filter(p => p.status !== 'SOLD');
             set({
-                products: allProducts,
-                favoriteProducts: allProducts.filter(p => favoriteProductIds.includes(p.id))
+                products: activeProducts,
+                favoriteProducts: activeProducts.filter(p => favoriteProductIds.includes(p.id))
             });
             return;
         }
 
         set({ isLoading: true, isProductsLoading: true, error: null });
         try {
-            const products = await productService.getProducts();
+            const allProducts = await productService.getProducts();
+            const activeProducts = allProducts.filter(p => p.status !== 'SOLD');
             set({
-                products,
-                cache: { ...get().cache, "ALL": products },
-                favoriteProducts: products.filter(p => get().favoriteProductIds.includes(p.id)),
+                products: activeProducts,
+                cache: { ...get().cache, "ALL": allProducts },
+                favoriteProducts: activeProducts.filter(p => get().favoriteProductIds.includes(p.id)),
                 isLoading: false,
                 isProductsLoading: false
             });
@@ -163,9 +165,9 @@ export const useProductStore = create<ProductStore>((set, get) => ({
             }
         }
 
-        let filteredProducts = allProducts;
+        let filteredProducts = allProducts.filter(p => p.status !== 'SOLD');
         if (params.category && params.category !== 'ALL') {
-            filteredProducts = allProducts.filter(p => p.category === params.category);
+            filteredProducts = filteredProducts.filter(p => p.category === params.category);
         }
 
         set({
