@@ -23,6 +23,10 @@ interface ProductStore {
     removeFavoriteProduct: (productId: number) => Promise<void>;
     filterProducts: (params: FilterParams) => Promise<void>;
     createProduct: (data: CreateProductRequest) => Promise<Product>;
+    updateProduct: (productId: number, data: CreateProductRequest) => Promise<Product>;
+    deleteProduct: (productId: number) => Promise<void>;
+    updateProductStatus: (productId: number, status: string) => Promise<void>;
+    refreshProducts: () => Promise<void>;
     getUserStats: (userId: number) => UserStats;
     getUserListings: (userId: number) => Product[];
     clearCache: () => void;
@@ -216,6 +220,95 @@ export const useProductStore = create<ProductStore>((set, get) => ({
             });
             throw error;
         }
+    },
+
+    updateProduct: async (productId: number, data: CreateProductRequest) => {
+        set({ isLoading: true, error: null });
+        try {
+            const updatedProduct = await productService.updateProduct(productId, data);
+            const { products, cache, favoriteProducts, favoriteProductIds } = get();
+
+            const updateProductInArray = (arr: Product[]) =>
+                arr.map(p => p.id === productId ? updatedProduct : p);
+
+            const updatedCache = { ...cache };
+            Object.keys(updatedCache).forEach(key => {
+                updatedCache[key] = updateProductInArray(updatedCache[key]);
+            });
+
+            set({
+                products: updateProductInArray(products),
+                cache: updatedCache,
+                favoriteProducts: favoriteProductIds.includes(productId) 
+                    ? updateProductInArray(favoriteProducts) 
+                    : favoriteProducts,
+                isLoading: false
+            });
+
+            return updatedProduct;
+        } catch (error: any) {
+            set({
+                error: error.message || 'Failed to update product',
+                isLoading: false
+            });
+            throw error;
+        }
+    },
+
+    deleteProduct: async (productId: number) => {
+        const { products, cache, favoriteProducts, favoriteProductIds } = get();
+
+        const updatedProducts = products.filter(p => p.id !== productId);
+        const updatedCache = { ...cache };
+
+        Object.keys(updatedCache).forEach(key => {
+            updatedCache[key] = updatedCache[key].filter(p => p.id !== productId);
+        });
+
+        set({
+            products: updatedProducts,
+            cache: updatedCache,
+            favoriteProducts: favoriteProducts.filter(p => p.id !== productId),
+            favoriteProductIds: favoriteProductIds.filter(id => id !== productId),
+        });
+
+        try {
+            await productService.deleteProduct(productId);
+        } catch (error: any) {
+            set({ products, cache, favoriteProducts, favoriteProductIds });
+            throw error;
+        }
+    },
+
+    updateProductStatus: async (productId: number, status: string) => {
+        const { products, cache } = get();
+
+        const updateProduct = (p: Product) =>
+            p.id === productId ? { ...p, status: status as Product['status'] } : p;
+
+        const updatedProducts = products.map(updateProduct);
+        const updatedCache = { ...cache };
+
+        Object.keys(updatedCache).forEach(key => {
+            updatedCache[key] = updatedCache[key].map(updateProduct);
+        });
+
+        set({
+            products: updatedProducts,
+            cache: updatedCache,
+        });
+
+        try {
+            await productService.updateProductStatus(productId, status);
+        } catch (error: any) {
+            set({ products, cache });
+            throw error;
+        }
+    },
+
+    refreshProducts: async () => {
+        set({ cache: {} });
+        await get().fetchProducts();
     },
 
     getUserStats: (userId: number): UserStats => {

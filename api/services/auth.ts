@@ -54,4 +54,12 @@ export const authService = {
         const response = await apiClient.put<User>("/user/edit-profile", data);
         return response.data;
     },
+
+    changePassword: async (data: ResetPasswordRequest): Promise<void> => {
+        await apiClient.post("/auth/change-password", data);
+    },
+
+    deleteAccount: async (): Promise<void> => {
+        await apiClient.delete("/user/me");
+    },
 };

@@ -44,6 +44,20 @@ const SignIn = () => {
         try {
             const response = await authService.signIn({ email, password });
         
+            if (response?.user && !response.user.isActive) {
+                Toast.show({
+                    type: "info",
+                    text1: "Email Not Verified",
+                    text2: "Please verify your email to continue.",
+                });
+
+                router.push({
+                    pathname: "/(auth)/verification/[verify]",
+                    params: { verify: "email", email }
+                });
+                return;
+            }
+
             if (response?.token) {
                 await setToken(response.token);
             }
@@ -60,6 +74,20 @@ const SignIn = () => {
 
             router.replace("/");
         } catch (error: any) {
+            if (error?.status === 403 || error?.message?.includes("verify your email")) {
+                Toast.show({
+                    type: "info",
+                    text1: "Email Not Verified",
+                    text2: "Please verify your email to continue.",
+                });
+
+                router.push({
+                    pathname: "/(auth)/verification/[verify]",
+                    params: { verify: "email", email }
+                });
+                return;
+            }
+
             Toast.show({
                 type: "error",
                 text1: "Sign In Failed",

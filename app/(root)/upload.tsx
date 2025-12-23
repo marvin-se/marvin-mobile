@@ -1,10 +1,11 @@
 import { View, Text, TouchableOpacity, TextInput, Modal, FlatList, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, Image } from 'react-native'
-import React, { use, useState } from 'react'
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
+import React, { useEffect, useState } from 'react'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
-import { router } from "expo-router"
+import { router, useLocalSearchParams } from "expo-router"
 import { MaterialCommunityIcons } from "@expo/vector-icons"
 import { useProductStore } from '@/store/useProductStore'
+import { productService } from '@/api/services/product'
 import Toast from 'react-native-toast-message'
 import * as ImagePicker from "expo-image-picker"
 import { categories } from "@/utils/constants"
@@ -59,20 +60,59 @@ const CategoryModal = ({ showCategoryModal, setShowCategoryModal, category, setC
       </TouchableOpacity>
     </Modal>
   )
-
-
 }
-const Upload = () => {
 
-  const { createProduct, isLoading } = useProductStore();
+const Upload = () => {
+  const { editId } = useLocalSearchParams<{ editId?: string }>();
+  const isEditMode = !!editId;
+
+  const { createProduct, updateProduct, products, isLoading } = useProductStore();
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState<string | null>(null);
   const [price, setPrice] = useState("");
   const [images, setImages] = useState<string[]>([]);
+  const [isLoadingProduct, setIsLoadingProduct] = useState(false);
 
   const [showCategoryModal, setShowCategoryModal] = useState(false);
+
+  useEffect(() => {
+    if (isEditMode && editId) {
+      loadProductData(Number(editId));
+    }
+  }, [editId]);
+
+  const loadProductData = async (productId: number) => {
+    setIsLoadingProduct(true);
+    try {
+      const cachedProduct = products.find(p => p.id === productId);
+      
+      if (cachedProduct) {
+        setTitle(cachedProduct.title || "");
+        setDescription(cachedProduct.description || "");
+        setCategory(cachedProduct.category || null);
+        setPrice(cachedProduct.price?.toString() || "");
+        setImages(cachedProduct.images || []);
+      } else {
+        const product = await productService.getProductById(productId);
+        setTitle(product.title || "");
+        setDescription(product.description || "");
+        setCategory(product.category || null);
+        setPrice(product.price?.toString() || "");
+        setImages(product.images || []);
+      }
+    } catch (error: any) {
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Failed to load product data'
+      });
+      router.back();
+    } finally {
+      setIsLoadingProduct(false);
+    }
+  };
 
   const pickImages = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -104,8 +144,6 @@ const Upload = () => {
     setImages((prev) => prev.filter((_, i) => i !== index));
   }
 
-
-
   const handleSubmit = async () => {
     if (images.length === 0) {
       Toast.show({ type: 'error', text1: 'Please add at least one photo' });
@@ -129,36 +167,64 @@ const Upload = () => {
     }
 
     try {
-      await createProduct({
-        title: title.trim(),
-        description: description.trim(),
-        price: parseFloat(price.trim()),
-        category: category,
-        images: images
-      });
+      if (isEditMode && editId) {
+        await updateProduct(Number(editId), {
+          title: title.trim(),
+          description: description.trim(),
+          price: parseFloat(price.trim()),
+          category: category,
+          images: images
+        });
 
-      Toast.show({
-        type: 'success',
-        text1: 'Success!',
-        text2: 'Your item has been listed'
-      });
+        Toast.show({
+          type: 'success',
+          text1: 'Success!',
+          text2: 'Your listing has been updated'
+        });
+      } else {
+        await createProduct({
+          title: title.trim(),
+          description: description.trim(),
+          price: parseFloat(price.trim()),
+          category: category,
+          images: images
+        });
+
+        Toast.show({
+          type: 'success',
+          text1: 'Success!',
+          text2: 'Your item has been listed'
+        });
+      }
 
       setTitle("");
       setDescription("");
       setCategory(null);
       setPrice("");
+      setImages([]);
 
       router.back();
 
     } catch (error: any) {
       Toast.show({
         type: 'error',
-        text1: 'Failed to list item',
+        text1: isEditMode ? 'Failed to update listing' : 'Failed to list item',
         text2: error.message || 'Please try again'
       });
     }
   };
 
+  // Loading state when fetching product data
+  if (isLoadingProduct) {
+    return (
+      <SafeAreaView className='bg-backgroundUpload h-full'>
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color="#72C69B" />
+          <Text className="text-textSecondary mt-4">Loading listing...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView className='bg-backgroundUpload h-full'>
@@ -169,7 +235,9 @@ const Upload = () => {
       >
         <View className='px-5 border-b border-b-borderPrimary pb-4 mb-5'>
           <View className="flex flex-row items-center justify-center mt-5 relative">
-            <Text className="text-2xl font-bold text-textPrimary">List Your Item</Text>
+            <Text className="text-2xl font-bold text-textPrimary">
+              {isEditMode ? "Edit Listing" : "List Your Item"}
+            </Text>
             <TouchableOpacity className='absolute left-0' onPress={() => router.back()} activeOpacity={0.5}>
               <MaterialIcons name="arrow-back" size={32} color="black" />
             </TouchableOpacity>
@@ -267,6 +335,7 @@ const Upload = () => {
                 onChangeText={setPrice}
                 placeholder="$ 0.00"
                 placeholderTextColor="#7F8C8D"
+                keyboardType="numeric"
                 className='border-[1.5px] border-borderPrimary p-4 bg-background rounded-lg text-lg font-medium'
               />
             </View>
@@ -276,13 +345,19 @@ const Upload = () => {
       </KeyboardAvoidingView>
 
       <View className='px-5 w-full mt-5'>
-        <TouchableOpacity className={`${isLoading ? "bg-primary/50" : "bg-primary"} p-4 rounded-lg`} activeOpacity={0.5} onPress={handleSubmit} disabled={isLoading}>
+        <TouchableOpacity 
+          className={`${isLoading ? "bg-primary/50" : "bg-primary"} p-4 rounded-lg`} 
+          activeOpacity={0.5} 
+          onPress={handleSubmit} 
+          disabled={isLoading}
+        >
           {isLoading ? (
             <ActivityIndicator size="small" color="#FFFFFF" />
           ) : (
-            <Text className='text-white text-center text-xl font-bold'>List Item</Text>
-          )
-          }
+            <Text className='text-white text-center text-xl font-bold'>
+              {isEditMode ? "Update Listing" : "List Item"}
+            </Text>
+          )}
         </TouchableOpacity>
       </View>
 
