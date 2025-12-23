@@ -6,6 +6,7 @@ import {
     TouchableOpacity,
     Dimensions,
     Animated,
+    ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -30,22 +31,30 @@ const Details = () => {
 
     const [selectedImageIndex, setSelectedImageIndex] = useState(0);
     const [showViews, setShowViews] = useState(true);
-    const [viewCount, setViewCount] = useState(product?.visitCount ?? 0);
+    const [viewCount, setViewCount] = useState<number | null>(null);
+    const [favouriteCount, setFavouriteCount] = useState<number | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
     const fadeAnim = useRef(new Animated.Value(1)).current;
 
     useEffect(() => {
-        const incrementViewCount = async () => {
+        const fetchProductStats = async () => {
+            setIsLoading(true);
             try {
                 const productId = Number(id);
                 const updatedProduct = await productService.getProductById(productId);
                 setViewCount(updatedProduct.visitCount ?? 0);
+                setFavouriteCount(updatedProduct.favouriteCount ?? 0);
             } catch (error) {
-                console.log("View count increment failed:", error);
+                console.log("Stats fetch failed:", error);
+                setViewCount(product?.visitCount ?? 0);
+                setFavouriteCount(product?.favouriteCount ?? 0);
+            } finally {
+                setIsLoading(false);
             }
         };
 
         if (id) {
-            incrementViewCount();
+            fetchProductStats();
         }
     }, [id]);
 
@@ -90,6 +99,18 @@ const Details = () => {
         if (isOwnProduct) return;
         router.push(`/chats/${product?.sellerId}`);
     };
+
+    // Loading state - full screen
+    if (isLoading) {
+        return (
+            <SafeAreaView className="bg-background h-full">
+                <View className="flex-1 items-center justify-center">
+                    <ActivityIndicator size="large" color="#72C69B" />
+                    <Text className="text-textSecondary mt-4">Loading...</Text>
+                </View>
+            </SafeAreaView>
+        );
+    }
 
     if (!product) {
         return (
@@ -211,7 +232,7 @@ const Details = () => {
                                 <>
                                     <Ionicons name="heart" size={16} color="#7F8C8D" />
                                     <Text className="text-sm text-textSecondary">
-                                        {product.favoriteCount ?? 0} likes
+                                        {favouriteCount} likes
                                     </Text>
                                 </>
                             )}

@@ -44,6 +44,7 @@ const ResetPassword = () => {
             await authService.resetPassword({
                 email: params.email,
                 token: params.code,
+                oldPassword: null,
                 newPassword: password,
                 confirmNewPassword: confirmPassword,
                 type: RequestType.FORGOT_PASSWORD

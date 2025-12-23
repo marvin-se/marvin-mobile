@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { View, ActivityIndicator } from "react-native";
-import Toast, { BaseToast, ErrorToast } from "react-native-toast-message";
+import Toast, { BaseToast, ErrorToast, InfoToast } from "react-native-toast-message";
 import { useAuthStore } from "@/store/useAuthStore";
 import "./global.css";
 
@@ -26,6 +26,22 @@ const toastConfig = {
         <ErrorToast
             {...props}
             style={{ borderLeftColor: "#e74c3c", height: 80 }}
+            contentContainerStyle={{ paddingHorizontal: 15 }}
+            text1Style={{
+                fontSize: 18,
+                fontWeight: "bold",
+                color: "#182c53",
+            }}
+            text2Style={{
+                fontSize: 16,
+                color: "#5a6778",
+            }}
+        />
+    ),
+    info: (props: any) => (
+        <InfoToast
+            {...props}
+            style={{ borderLeftColor: "#182c53", height: 80 }}
             contentContainerStyle={{ paddingHorizontal: 15 }}
             text1Style={{
                 fontSize: 18,

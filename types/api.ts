@@ -9,7 +9,7 @@ export interface Product {
     images: string[] | null;
     isFavourite: boolean;
     status: string;
-    favoriteCount: number | null;
+    favouriteCount: number | null;
     visitCount: number | null;
 }
 

@@ -1,92 +1,174 @@
-import { useState } from "react";
-import { View, Text, TouchableOpacity, FlatList, Alert } from "react-native";
+import { useState, useCallback } from "react";
+import { View, Text, TouchableOpacity, FlatList, Alert, ActivityIndicator, Modal } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
 import { MaterialIcons } from "@expo/vector-icons";
 import TabSelector from "@/components/profile/TabSelector";
 import MyListingCard from "@/components/profile/MyListingCard";
+import { useAuthStore } from "@/store/useAuthStore";
+import { useProductStore } from "@/store/useProductStore";
+import { productService } from "@/api/services/product";
+import { Product } from "@/types/api";
 
 const MyListings = () => {
     const router = useRouter();
+    const { user } = useAuthStore();
+    const { deleteProduct, updateProductStatus } = useProductStore();
     const [activeTab, setActiveTab] = useState(0);
+    const [listings, setListings] = useState<Product[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
-    const myListings = [
-        {
-            id: '1',
-            title: 'Calculus: Early Transcendentals',
-            price: 85,
-            image: 'https://picsum.photos/id/24/300/400',
-            isSold: false,
-        },
-        {
-            id: '2',
-            title: 'Gaming Laptop - RTX 3060',
-            price: 850,
-            image: 'https://picsum.photos/id/0/300/400',
-            isSold: false,
-        },
-        {
-            id: '3',
-            title: 'Wireless Headphones',
-            price: 120,
-            image: 'https://picsum.photos/id/367/300/400',
-            isSold: true,
-        },
-        {
-            id: '4',
-            title: 'Winter Jacket',
-            price: 95,
-            image: 'https://picsum.photos/id/835/300/400',
-            isSold: true,
-        },
-        {
-            id: '5',
-            title: 'Study Desk',
-            price: 65,
-            image: 'https://picsum.photos/id/431/300/400',
-            isSold: false,
-        },
-        {
-            id: '6',
-            title: 'iPhone 13 Pro',
-            price: 650,
-            image: 'https://picsum.photos/id/160/300/400',
-            isSold: true,
-        },
-    ];
+    const fetchMyListings = useCallback(async () => {
+        if (!user?.id) return;
 
-    const activeListings = myListings.filter(item => !item.isSold);
-    const soldListings = myListings.filter(item => item.isSold);
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            const data = await productService.getUserListings(user.id);
+            setListings(data);
+        } catch (err: any) {
+            const errorMessage = typeof err === 'string' 
+                ? err 
+                : err?.message || err?.error || "Failed to load listings";
+            setError(errorMessage);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [user?.id]);
+
+    // Refetch when screen comes into focus
+    useFocusEffect(
+        useCallback(() => {
+            fetchMyListings();
+        }, [fetchMyListings])
+    );
+
+    const activeListings = listings.filter(item => item.status !== "SOLD");
+    const soldListings = listings.filter(item => item.status === "SOLD");
     const displayListings = activeTab === 0 ? activeListings : soldListings;
 
-    const handleMenuPress = (id: string) => {
+    const handleMenuPress = (id: number) => {
+        const listing = listings.find(l => l.id === id);
+        const isSold = listing?.status === "SOLD";
+
         Alert.alert(
             "Options",
             "Choose an action",
             [
                 {
                     text: "Edit Listing",
-                    onPress: () => console.log("Edit:", id),
+                    onPress: () => router.push(`/upload?editId=${id}`),
                 },
-                {
+                ...(!isSold ? [{
                     text: "Mark as Sold",
-                    onPress: () => console.log("Mark as sold:", id),
-                },
+                    onPress: () => handleMarkAsSold(id),
+                }] : []),
                 {
                     text: "Delete Listing",
-                    style: "destructive",
-                    onPress: () => console.log("Delete:", id),
+                    style: "destructive" as const,
+                    onPress: () => handleDelete(id),
                 },
                 {
                     text: "Cancel",
-                    style: "cancel",
+                    style: "cancel" as const,
                 },
             ]
         );
     };
 
+    const handleMarkAsSold = async (id: number) => {
+        setIsProcessing(true);
+        try {
+            await updateProductStatus(id, "SOLD");
+            setListings(prev => 
+                prev.map(item => 
+                    item.id === id ? { ...item, status: "SOLD" } : item
+                )
+            );
+        } catch (err: any) {
+            const errorMessage = typeof err === 'string' 
+                ? err 
+                : err?.message || err?.error || "Could not update listing";
+            Alert.alert("Error", errorMessage);
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    const handleDelete = (id: number) => {
+        Alert.alert(
+            "Delete Listing",
+            "Are you sure you want to delete this listing?",
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Delete",
+                    style: "destructive",
+                    onPress: async () => {
+                        setIsProcessing(true);
+                        try {
+                            await deleteProduct(id);
+                            setListings(prev => prev.filter(item => item.id !== id));
+                        } catch (err: any) {
+                            const errorMessage = typeof err === 'string' 
+                                ? err 
+                                : err?.message || err?.error || "Could not delete listing";
+                            Alert.alert("Error", errorMessage);
+                        } finally {
+                            setIsProcessing(false);
+                        }
+                    },
+                },
+            ]
+        );
+    };
+
+    if (isLoading) {
+        return (
+            <SafeAreaView className="bg-background h-full">
+                <View className="flex-1 items-center justify-center">
+                    <ActivityIndicator size="large" color="#72C69B" />
+                    <Text className="text-textSecondary mt-4">Loading listings...</Text>
+                </View>
+            </SafeAreaView>
+        );
+    }
+
+    if (error) {
+        return (
+            <SafeAreaView className="bg-background h-full">
+                <View className="flex-1 items-center justify-center px-5">
+                    <MaterialIcons name="error-outline" size={64} color="#CDD5E0" />
+                    <Text className="text-xl font-semibold text-textSecondary mt-4">
+                        {error}
+                    </Text>
+                    <TouchableOpacity
+                        onPress={fetchMyListings}
+                        className="bg-primary px-6 py-3 rounded-full mt-6"
+                        activeOpacity={0.7}
+                    >
+                        <Text className="text-white font-semibold">Try Again</Text>
+                    </TouchableOpacity>
+                </View>
+            </SafeAreaView>
+        );
+    }
+
     return (
         <SafeAreaView className="bg-background h-full">
+            {/* Processing Overlay */}
+            <Modal transparent visible={isProcessing} animationType="fade">
+                <View className="flex-1 bg-black/50 items-center justify-center">
+                    <View className="p-6 rounded-2xl items-center">
+                        <ActivityIndicator size="large" color="#72C69B" />
+                    </View>
+                </View>
+            </Modal>
+
             <View className="px-5 border-b border-b-borderPrimary pb-4">
                 <View className="flex flex-row items-center justify-center mt-5 relative">
                     <Text className="text-2xl font-bold text-textPrimary">My Listings</Text>
@@ -135,15 +217,15 @@ const MyListings = () => {
                         data={displayListings}
                         renderItem={({ item }) => (
                             <MyListingCard
-                                id={item.id}
+                                id={String(item.id)}
                                 title={item.title}
                                 price={item.price}
-                                image={item.image}
-                                isSold={item.isSold}
+                                image={item.images?.[0] || "https://picsum.photos/300/400"}
+                                isSold={item.status === "SOLD"}
                                 onMenuPress={() => handleMenuPress(item.id)}
                             />
                         )}
-                        keyExtractor={(item) => item.id}
+                        keyExtractor={(item) => String(item.id)}
                         numColumns={2}
                         columnWrapperStyle={{ justifyContent: 'space-between' }}
                         showsVerticalScrollIndicator={false}

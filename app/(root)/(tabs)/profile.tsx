@@ -86,25 +86,29 @@ const Profile = () => {
 
                 <ProfileSection title="Account">
                     <ProfileMenuItem
-                        icon="settings"
-                        title="Settings"
-                        onPress={() => router.push("/profile/settings")}
-                    />
-                    <ProfileMenuItem
                         icon="help-outline"
                         title="FAQ"
                         onPress={() => router.push("/profile/faq")}
                     />
                     <ProfileMenuItem
+                        icon="lock"
+                        title="Change Password"
+                        onPress={() => router.push("/profile/change-password")}
+                    />
+                    <ProfileMenuItem
                         icon="logout"
                         title="Logout"
                         onPress={handleLogout}
+                        textColor="text-red-500"
+                    />
+                    <ProfileMenuItem
+                        icon="delete"
+                        title="Delete Account"
+                        onPress={() => { }}
                         showBorder={false}
                         textColor="text-red-500"
                     />
                 </ProfileSection>
-
-                <View className="h-24" />
             </ScrollView>
         </SafeAreaView>
     );

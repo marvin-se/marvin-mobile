@@ -38,7 +38,8 @@ export enum RequestType {
 
 export interface ResetPasswordRequest {
     email: string;
-    token: string;
+    token: string | null;
+    oldPassword: string | null;
     newPassword: string;
     confirmNewPassword: string;
     type: RequestType;
