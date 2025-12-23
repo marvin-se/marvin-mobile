@@ -3,7 +3,7 @@ import ProductGrid from "@/components/ProductGrid";
 import Search from "@/components/Search";
 import { useProductStore } from "@/store/useProductStore";
 import { AntDesign, MaterialCommunityIcons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -11,6 +11,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function Index() {
 
   const { filterProducts, fetchProducts } = useProductStore();
+  const { query } = useLocalSearchParams<{ query?: string }>();
 
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
 
@@ -18,9 +19,12 @@ export default function Index() {
     fetchProducts();
   }, [])
 
+  useEffect(() => {
+    filterProducts({ category: selectedCategory, keyword: query });
+  }, [query, selectedCategory]);
+
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category);
-    filterProducts({ category: category });
   }
 
   return (

@@ -170,6 +170,15 @@ export const useProductStore = create<ProductStore>((set, get) => ({
         }
 
         let filteredProducts = allProducts.filter(p => p.status !== 'SOLD');
+
+        if (params.keyword && params.keyword.trim()) {
+            const keyword = params.keyword.toLowerCase().trim();
+            filteredProducts = filteredProducts.filter(p =>
+                p.title.toLowerCase().includes(keyword) ||
+                p.description.toLowerCase().includes(keyword)
+            );
+        }
+
         if (params.category && params.category !== 'ALL') {
             filteredProducts = filteredProducts.filter(p => p.category === params.category);
         }

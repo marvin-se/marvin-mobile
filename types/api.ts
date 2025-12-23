@@ -22,7 +22,8 @@ export interface CreateProductRequest {
 }
 
 export interface FilterParams {
-    category: string;
+    category?: string;
+    keyword?: string;
 }
 
 export interface FavouritesResponse {
