@@ -1,14 +1,13 @@
-import { View, Text, TouchableOpacity, TextInput, Modal, FlatList, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, Image } from 'react-native'
-import React, { useEffect, useState } from 'react'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import { Ionicons, MaterialIcons } from '@expo/vector-icons'
-import { router, useLocalSearchParams } from "expo-router"
-import { MaterialCommunityIcons } from "@expo/vector-icons"
-import { useProductStore } from '@/store/useProductStore'
 import { productService } from '@/api/services/product'
-import Toast from 'react-native-toast-message'
-import * as ImagePicker from "expo-image-picker"
+import { useProductStore } from '@/store/useProductStore'
 import { categories } from "@/utils/constants"
+import { Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons'
+import * as ImagePicker from "expo-image-picker"
+import { router, useLocalSearchParams } from "expo-router"
+import React, { useEffect, useState } from 'react'
+import { ActivityIndicator, FlatList, Image, KeyboardAvoidingView, Modal, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import Toast from 'react-native-toast-message'
 
 const MAX_IMAGES = 5;
 
@@ -66,7 +65,7 @@ const Upload = () => {
   const { editId } = useLocalSearchParams<{ editId?: string }>();
   const isEditMode = !!editId;
 
-  const { createProduct, updateProduct, products, isLoading } = useProductStore();
+  const { createProduct, updateProduct, products, isLoading, refreshProducts } = useProductStore();
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -87,7 +86,7 @@ const Upload = () => {
     setIsLoadingProduct(true);
     try {
       const cachedProduct = products.find(p => p.id === productId);
-      
+
       if (cachedProduct) {
         setTitle(cachedProduct.title || "");
         setDescription(cachedProduct.description || "");
@@ -166,36 +165,61 @@ const Upload = () => {
       return;
     }
 
+    setIsLoadingProduct(true);
+
     try {
+      let productId: number;
+
       if (isEditMode && editId) {
-        await updateProduct(Number(editId), {
+        productId = Number(editId);
+        await updateProduct(productId, {
           title: title.trim(),
           description: description.trim(),
           price: parseFloat(price.trim()),
           category: category,
-          images: images
-        });
-
-        Toast.show({
-          type: 'success',
-          text1: 'Success!',
-          text2: 'Your listing has been updated'
+          images: []
         });
       } else {
-        await createProduct({
+        const newProduct = await productService.createProduct({
           title: title.trim(),
           description: description.trim(),
           price: parseFloat(price.trim()),
           category: category,
-          images: images
+          images: []
         });
+        productId = newProduct.id;
+      }
 
-        Toast.show({
-          type: 'success',
-          text1: 'Success!',
-          text2: 'Your item has been listed'
+      const newImagesToUpload = images.filter(img => !img.startsWith('http'));
+
+      if (newImagesToUpload.length > 0) {
+        const presignReq = {
+          images: newImagesToUpload.map(uri => ({
+            fileName: uri.split('/').pop() || `image_${Date.now()}.jpg`,
+            contentType: 'image/jpeg'
+          }))
+        };
+
+        const presignRes = await productService.getPresignedUrls(productId, presignReq);
+        await Promise.all(presignRes.images.map((item, index) => {
+          return productService.uploadImageToS3(item.uploadUrl, newImagesToUpload[index], 'image/jpeg');
+        }));
+        await productService.attachImages(productId, {
+          imageKeys: presignRes.images.map(item => item.key)
         });
       }
+
+      if (!isEditMode) {
+        await productService.publishProduct(productId);
+      }
+
+      await refreshProducts();
+
+      Toast.show({
+        type: 'success',
+        text1: 'Success!',
+        text2: isEditMode ? 'Your listing has been updated' : 'Your item has been listed'
+      });
 
       setTitle("");
       setDescription("");
@@ -206,15 +230,17 @@ const Upload = () => {
       router.back();
 
     } catch (error: any) {
+      console.error(error);
       Toast.show({
         type: 'error',
         text1: isEditMode ? 'Failed to update listing' : 'Failed to list item',
         text2: error.message || 'Please try again'
       });
+    } finally {
+      setIsLoadingProduct(false);
     }
   };
 
-  // Loading state when fetching product data
   if (isLoadingProduct) {
     return (
       <SafeAreaView className='bg-backgroundUpload h-full'>
@@ -297,6 +323,7 @@ const Upload = () => {
                 onChangeText={setTitle}
                 placeholder="e.g, Introduction to Psychology Textbook"
                 placeholderTextColor="#7F8C8D"
+                autoCapitalize='none'
                 className='border-[1.5px] border-borderPrimary p-4 bg-background rounded-lg text-lg font-medium'
               />
             </View>
@@ -319,6 +346,7 @@ const Upload = () => {
               <Text className='text-black text-xl font-medium'>Description</Text>
               <TextInput
                 multiline
+                autoCapitalize='none'
                 numberOfLines={2}
                 value={description}
                 onChangeText={setDescription}
@@ -333,6 +361,7 @@ const Upload = () => {
               <TextInput
                 value={price}
                 onChangeText={setPrice}
+                autoCapitalize='none'
                 placeholder="$ 0.00"
                 placeholderTextColor="#7F8C8D"
                 keyboardType="numeric"
@@ -345,10 +374,10 @@ const Upload = () => {
       </KeyboardAvoidingView>
 
       <View className='px-5 w-full mt-5'>
-        <TouchableOpacity 
-          className={`${isLoading ? "bg-primary/50" : "bg-primary"} p-4 rounded-lg`} 
-          activeOpacity={0.5} 
-          onPress={handleSubmit} 
+        <TouchableOpacity
+          className={`${isLoading ? "bg-primary/50" : "bg-primary"} p-4 rounded-lg`}
+          activeOpacity={0.5}
+          onPress={handleSubmit}
           disabled={isLoading}
         >
           {isLoading ? (

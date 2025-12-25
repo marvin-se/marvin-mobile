@@ -30,6 +30,8 @@ interface ProductStore {
     getUserStats: (userId: number) => UserStats;
     getUserListings: (userId: number) => Product[];
     clearCache: () => void;
+    imageUrlCache: Record<number, string[]>;
+    cacheImageUrls: (productId: number, urls: string[]) => void;
 }
 
 export const useProductStore = create<ProductStore>((set, get) => ({
@@ -37,9 +39,12 @@ export const useProductStore = create<ProductStore>((set, get) => ({
     favoriteProducts: [],
     favoriteProductIds: [],
     cache: {},
+    imageUrlCache: {}, // Initialize local image cache
     isLoading: false,
     isProductsLoading: false,
     error: null,
+
+
 
     fetchProducts: async () => {
         const { cache, favoriteProductIds } = get();
@@ -196,7 +201,7 @@ export const useProductStore = create<ProductStore>((set, get) => ({
             set({ products: cache[cacheKey] });
             return;
         }
-
+ 
         set({ isLoading: true, error: null });
         try {
             if (!params.category || params.category === 'ALL') {
@@ -248,8 +253,8 @@ export const useProductStore = create<ProductStore>((set, get) => ({
             set({
                 products: updateProductInArray(products),
                 cache: updatedCache,
-                favoriteProducts: favoriteProductIds.includes(productId) 
-                    ? updateProductInArray(favoriteProducts) 
+                favoriteProducts: favoriteProductIds.includes(productId)
+                    ? updateProductInArray(favoriteProducts)
                     : favoriteProducts,
                 isLoading: false
             });
@@ -336,6 +341,15 @@ export const useProductStore = create<ProductStore>((set, get) => ({
     },
 
     clearCache: () => {
-        set({ cache: {} });
+        set({ cache: {}, imageUrlCache: {} });
+    },
+
+    cacheImageUrls: (productId: number, urls: string[]) => {
+        set((state) => ({
+            imageUrlCache: {
+                ...state.imageUrlCache,
+                [productId]: urls
+            }
+        }));
     }
 }))

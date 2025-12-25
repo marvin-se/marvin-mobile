@@ -1,10 +1,11 @@
+import { productService } from '@/api/services/product';
+import { useAuthStore } from '@/store/useAuthStore';
 import { useProductStore } from '@/store/useProductStore';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import React from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
-import { useAuthStore } from '@/store/useAuthStore';
 
 interface ProductCardProps {
     id: number;
@@ -19,7 +20,7 @@ interface ProductCardProps {
 
 const ProductCard = ({ id, title, price, images, sellerId, isFavorite, visitCount, favoriteCount }: ProductCardProps) => {
 
-    const { addFavoriteProduct, removeFavoriteProduct, fetchFavoriteProducts } = useProductStore();
+    const { addFavoriteProduct, removeFavoriteProduct, fetchFavoriteProducts, imageUrlCache, cacheImageUrls } = useProductStore();
 
     const userId = useAuthStore((state) => state.user?.id);
 
@@ -35,6 +36,41 @@ const ProductCard = ({ id, title, price, images, sellerId, isFavorite, visitCoun
         }
     }
 
+
+
+    const [displayImage, setDisplayImage] = React.useState<string | undefined>(images ? images[0] : undefined);
+
+    React.useEffect(() => {
+        const loadSignedImage = async () => {
+            if (images && images.length > 0) {
+                const firstImage = images[0];
+                if (firstImage.startsWith('products/')) {
+                    if (imageUrlCache[id] && imageUrlCache[id].length > 0) {
+                        setDisplayImage(imageUrlCache[id][0]);
+                        return;
+                    }
+
+                    try {
+                        const response = await productService.getProductImages(id);
+                        if (response.images && response.images.length > 0) {
+                            const urls = response.images.map(img => img.url);
+                            cacheImageUrls(id, urls);
+                            setDisplayImage(urls[0]);
+                        }
+                    } catch (error) {
+                        console.error("Failed to load image for product", id, error);
+                    }
+                } else {
+                    setDisplayImage(firstImage);
+                }
+            } else {
+                setDisplayImage(undefined);
+            }
+        };
+
+        loadSignedImage();
+    }, [images, id, imageUrlCache]);
+
     return (
         <TouchableOpacity
             onPress={handleProductPress}
@@ -43,7 +79,7 @@ const ProductCard = ({ id, title, price, images, sellerId, isFavorite, visitCoun
         >
             <View className='relative'>
                 <Image
-                    source={{ uri: images ? images[0] : undefined }}
+                    source={{ uri: displayImage }}
                     style={{ width: '100%', height: 200, borderRadius: 16 }}
                     contentFit='cover'
                 />

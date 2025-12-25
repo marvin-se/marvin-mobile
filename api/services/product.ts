@@ -1,6 +1,6 @@
 import { apiClient } from "../config"
 
-import { CreateProductRequest, Product } from "@/types/api"
+import { AttachImagesRequest, AttachImagesResponse, CreateProductRequest, PresignImageRequest, PresignImageResponse, Product } from "@/types/api"
 
 export const productService = {
     getProducts: async (): Promise<Product[]> => {
@@ -35,5 +35,41 @@ export const productService = {
 
     deleteProduct: async (id: number): Promise<void> => {
         await apiClient.delete(`/listings/${id}`)
+    },
+
+    getPresignedUrls: async (adId: number, data: PresignImageRequest): Promise<PresignImageResponse> => {
+        const response = await apiClient.post<PresignImageResponse>(`/listings/${adId}/images/presign`, data)
+        return response.data
+    },
+
+    uploadImageToS3: async (uploadUrl: string, imageUri: string, contentType: string): Promise<void> => {
+        const response = await fetch(imageUri);
+        const blob = await response.blob();
+
+        const uploadResponse = await fetch(uploadUrl, {
+            method: 'PUT',
+            body: blob,
+            headers: {
+                'Content-Type': contentType,
+            },
+        });
+
+        if (!uploadResponse.ok) {
+            throw new Error('Failed to upload image to S3');
+        }
+    },
+
+    attachImages: async (adId: number, data: AttachImagesRequest): Promise<AttachImagesResponse> => {
+        const response = await apiClient.post<AttachImagesResponse>(`/listings/${adId}/images`, data)
+        return response.data
+    },
+
+    publishProduct: async (adId: number): Promise<void> => {
+        await apiClient.put(`/listings/${adId}/publish`)
+    },
+
+    getProductImages: async (adId: number): Promise<AttachImagesResponse> => {
+        const response = await apiClient.get<AttachImagesResponse>(`/listings/${adId}/images`)
+        return response.data
     },
 }

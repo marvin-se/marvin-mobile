@@ -53,3 +53,34 @@ export interface ConversationListResponse {
     conversations: Conversation[];
     numberOfConversations: number;
 }
+
+export interface PresignImageRequestItem {
+    fileName: string;
+    contentType: string;
+}
+
+export interface PresignImageRequest {
+    images: PresignImageRequestItem[];
+}
+
+export interface PresignImageResponseItem {
+    key: string;
+    uploadUrl: string;
+}
+
+export interface PresignImageResponse {
+    images: PresignImageResponseItem[];
+}
+
+export interface AttachImagesRequest {
+    imageKeys: string[];
+}
+
+export interface AttachImagesResponseItem {
+    key: string;
+    url: string;
+}
+
+export interface AttachImagesResponse {
+    images: AttachImagesResponseItem[];
+}
