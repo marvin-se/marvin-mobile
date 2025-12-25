@@ -10,11 +10,11 @@ import { User } from "@/types/auth";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, FlatList, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, FlatList, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const UserProfile = () => {
-    const { userId, name, email, university, avatar } = useLocalSearchParams<{ 
+    const { userId, name, email, university, avatar } = useLocalSearchParams<{
         userId: string;
         name?: string;
         email?: string;
@@ -70,7 +70,7 @@ const UserProfile = () => {
                 setIsLoading(false);
                 return;
             }
-            
+
             setListings(userListings);
 
             // Preload images for listings
@@ -92,7 +92,7 @@ const UserProfile = () => {
             }
         } catch (err: any) {
             let errorMessage = "Failed to load profile";
-            
+
             if (typeof err === 'string') {
                 errorMessage = err;
             } else if (err?.response?.data?.message) {
@@ -102,7 +102,7 @@ const UserProfile = () => {
             } else if (err?.error && typeof err.error === 'string') {
                 errorMessage = err.error;
             }
-            
+
             setError(errorMessage);
         } finally {
             setIsLoading(false);
@@ -116,6 +116,33 @@ const UserProfile = () => {
     const activeListings = listings.filter(item => item.status !== "SOLD");
     const soldListings = listings.filter(item => item.status === "SOLD");
     const displayListings = activeTab === 0 ? activeListings : soldListings;
+
+    const handleBlockUser = () => {
+        Alert.alert(
+            "Block User",
+            "Are you sure you want to block this user? You won't see their listings anymore.",
+            [
+                {
+                    text: "Cancel",
+                    style: "cancel"
+                },
+                {
+                    text: "Block",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            setIsLoading(true);
+                            await authService.blockUser(Number(userId));
+                            router.replace("/(root)/(tabs)");
+                        } catch (err) {
+                            Alert.alert("Error", "Failed to block user");
+                            setIsLoading(false);
+                        }
+                    }
+                }
+            ]
+        );
+    };
 
     const handleListingPress = (id: number) => {
         router.push(`/details/${id}`);
@@ -164,6 +191,13 @@ const UserProfile = () => {
                         activeOpacity={0.5}
                     >
                         <MaterialIcons name="arrow-back" size={28} color="#2C3E50" />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        className="absolute right-0"
+                        onPress={handleBlockUser}
+                        activeOpacity={0.5}
+                    >
+                        <MaterialIcons name="close" size={28} color="#EF4444" />
                     </TouchableOpacity>
                 </View>
             </View>
