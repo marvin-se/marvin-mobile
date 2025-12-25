@@ -1,20 +1,20 @@
-import { useState, useEffect, useRef } from "react";
+import { productService } from "@/api/services/product";
+import { useAuthStore } from "@/store/useAuthStore";
+import { useProductStore } from "@/store/useProductStore";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { Image } from "expo-image";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useEffect, useRef, useState } from "react";
 import {
-    View,
-    Text,
-    ScrollView,
-    TouchableOpacity,
-    Dimensions,
-    Animated,
     ActivityIndicator,
+    Animated,
+    Dimensions,
+    ScrollView,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { Image } from "expo-image";
-import { MaterialIcons, Ionicons } from "@expo/vector-icons";
-import { useProductStore } from "@/store/useProductStore";
-import { useAuthStore } from "@/store/useAuthStore";
-import { productService } from "@/api/services/product";
 import Toast from "react-native-toast-message";
 
 const { width } = Dimensions.get("window");
@@ -22,7 +22,7 @@ const { width } = Dimensions.get("window");
 const Details = () => {
     const { id } = useLocalSearchParams();
     const router = useRouter();
-    const { products, favoriteProducts, addFavoriteProduct, removeFavoriteProduct } = useProductStore();
+    const { products, favoriteProducts, addFavoriteProduct, removeFavoriteProduct, imageUrlCache, cacheImageUrls } = useProductStore();
     const { user } = useAuthStore();
 
     const product = products.find((p) => p.id === Number(id));
@@ -35,6 +35,41 @@ const Details = () => {
     const [favouriteCount, setFavouriteCount] = useState<number | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const fadeAnim = useRef(new Animated.Value(1)).current;
+
+    const images = product?.images?.length ? product.images : ["https://picsum.photos/400/400"];
+    const [displayImages, setDisplayImages] = useState<string[]>(images);
+
+    useEffect(() => {
+        const loadSignedImages = async () => {
+            const productId = Number(id);
+            if (product?.images && product.images.length > 0) {
+                const firstImage = product.images[0];
+                if (firstImage.startsWith('products/')) {
+                    if (imageUrlCache[productId] && imageUrlCache[productId].length > 0) {
+                        setDisplayImages(imageUrlCache[productId]);
+                        return;
+                    }
+
+                    try {
+                        const response = await productService.getProductImages(productId);
+                        if (response.images && response.images.length > 0) {
+                            const urls = response.images.map(img => img.url);
+                            cacheImageUrls(productId, urls);
+                            setDisplayImages(urls);
+                        }
+                    } catch (error) {
+                        console.error("Failed to load images for product details", id, error);
+                    }
+                } else {
+                    setDisplayImages(product.images);
+                }
+            }
+        };
+
+        if (product) {
+            loadSignedImages();
+        }
+    }, [product, id, imageUrlCache]);
 
     useEffect(() => {
         const fetchProductStats = async () => {
@@ -132,7 +167,7 @@ const Details = () => {
         );
     }
 
-    const images = product.images?.length ? product.images : ["https://picsum.photos/400/400"];
+
 
     return (
         <SafeAreaView className="bg-background h-full">
@@ -149,7 +184,7 @@ const Details = () => {
                             setSelectedImageIndex(index);
                         }}
                     >
-                        {images.map((img, index) => (
+                        {displayImages.map((img, index) => (
                             <Image
                                 key={index}
                                 source={{ uri: img }}
@@ -181,9 +216,9 @@ const Details = () => {
                         </TouchableOpacity>
                     )}
 
-                    {images.length > 1 && (
+                    {displayImages.length > 1 && (
                         <View className="absolute bottom-4 left-0 right-0 flex-row justify-center gap-2">
-                            {images.map((_, index) => (
+                            {displayImages.map((_, index) => (
                                 <View
                                     key={index}
                                     className={`w-2 h-2 rounded-full ${selectedImageIndex === index ? "bg-white" : "bg-white/50"
