@@ -2,12 +2,12 @@ import ProfileHeader from "@/components/profile/ProfileHeader";
 import ProfileMenuItem from "@/components/profile/ProfileMenuItem";
 import ProfileSection from "@/components/profile/ProfileSection";
 import StatCard from "@/components/profile/StatCard";
-import { useRouter } from "expo-router";
-import { Alert, ScrollView, View, Text } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useProductStore } from "@/store/useProductStore";
+import { useRouter } from "expo-router";
 import { useEffect } from "react";
+import { Alert, ScrollView, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const Profile = () => {
     const router = useRouter();
@@ -59,7 +59,7 @@ const Profile = () => {
                 <ProfileHeader
                     name={user.fullName}
                     email={user.email}
-                    avatar={user.profilePicUrl || "https://i.pravatar.cc/150"}
+                    avatar={user.profilePicUrl}
                     university={user.universityName}
                     showEditButton
                     onEditPress={() => router.push("/profile/edit")}

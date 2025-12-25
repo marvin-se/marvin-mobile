@@ -1,16 +1,18 @@
-import React from "react";
-import { View, Text, TouchableOpacity } from "react-native";
-import { Image } from "expo-image";
+import { getAvatarUrl } from "@/utils/avatar";
 import { MaterialIcons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { useRouter } from "expo-router";
+import React from "react";
+import { Text, TouchableOpacity, View } from "react-native";
 
 interface ProfileHeaderProps {
     name: string;
-    email: string;
-    avatar: string;
+    email?: string;
+    avatar?: string;
     university: string;
     showBackButton?: boolean;
     showEditButton?: boolean;
+    hideEmail?: boolean;
     onEditPress?: () => void;
 }
 
@@ -21,9 +23,11 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
     university,
     showBackButton = false,
     showEditButton = false,
+    hideEmail = false,
     onEditPress,
 }) => {
     const router = useRouter();
+    const avatarUrl = getAvatarUrl(name, avatar);
 
     return (
         <View className="py-6 px-5 bg-white border-b border-borderPrimary relative">
@@ -51,14 +55,16 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 
             <View className="flex-row justify-between items-center">
                 <Image
-                    source={{ uri: avatar }}
+                    source={{ uri: avatarUrl }}
                     style={{ width: 80, height: 80, borderRadius: 40 }}
                     contentFit="cover"
                 />
 
                 <View className="flex-1 ml-4">
                     <Text className="text-xl font-bold text-textPrimary">{name}</Text>
-                    <Text className="text-sm text-textSecondary mt-1">{email}</Text>
+                    {!hideEmail && email && (
+                        <Text className="text-sm text-textSecondary mt-1">{email}</Text>
+                    )}
                     <Text className="text-sm text-textSecondary mt-1">{university}</Text>
                 </View>
             </View>
