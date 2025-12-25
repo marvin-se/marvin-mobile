@@ -91,6 +91,11 @@ const Profile = () => {
                         onPress={() => router.push("/profile/faq")}
                     />
                     <ProfileMenuItem
+                        icon="block"
+                        title="Blocked Users"
+                        onPress={() => router.push("/profile/blocked-users")}
+                    />
+                    <ProfileMenuItem
                         icon="lock"
                         title="Change Password"
                         onPress={() => router.push("/profile/change-password")}
