@@ -1,8 +1,7 @@
 import { formatTimeAgo } from '@/utils/formatTime';
 import { Image } from 'expo-image';
-import { router } from 'expo-router';
 import React from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 interface HistoryItemProps {
     id: string;
@@ -23,16 +22,10 @@ const HistoryItem: React.FC<HistoryItemProps> = ({
     date,
     showBorder = true,
 }) => {
-    const handlePress = () => {
-        router.push(`/details/${id}`);
-    }
-
     return (
-        <TouchableOpacity
-            onPress={handlePress}
+        <View
             className={`flex-row items-center gap-4 py-4 ${showBorder ? 'border-b border-borderPrimary' : ''
                 }`}
-            activeOpacity={0.7}
         >
             <Image
                 source={{ uri: image }}
@@ -54,7 +47,7 @@ const HistoryItem: React.FC<HistoryItemProps> = ({
                     {formatTimeAgo(date)}
                 </Text>
             </View>
-        </TouchableOpacity>
+        </View>
     );
 };
 

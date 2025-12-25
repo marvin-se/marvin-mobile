@@ -73,6 +73,12 @@ export const productService = {
         return response.data
     },
 
+    deleteImage: async (adId: number, imageKey: string): Promise<void> => {
+        await apiClient.delete(`/listings/${adId}/images`, {
+            params: { imageKey }
+        })
+    },
+
     getSalesHistory: async (): Promise<any[]> => {
         const response = await apiClient.get<any[]>("/user/sales")
         return response.data
