@@ -1,3 +1,9 @@
+/* POLYFILLS FOR STOMPJS IN REACT NATIVE */
+import * as encoding from 'text-encoding';
+const _global = typeof global !== 'undefined' ? global : window;
+_global.TextEncoder = _global.TextEncoder || encoding.TextEncoder;
+_global.TextDecoder = _global.TextDecoder || encoding.TextDecoder;
+
 import { useEffect, useState } from "react";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { View, ActivityIndicator } from "react-native";

@@ -1,74 +1,223 @@
-import { getChatById } from '@/data/mockChats'
-import { getMessageById } from '@/data/mockMessages'
-import { AntDesign, Entypo, MaterialIcons } from '@expo/vector-icons'
+import { messagesService } from '@/api/services/messages'
+import { useAuthStore } from '@/store/useAuthStore'
+import { Conversation } from '@/types/api'
+import { AntDesign, MaterialIcons } from '@expo/vector-icons'
 import { Image } from 'expo-image'
 import { router, useLocalSearchParams } from 'expo-router'
-import React from 'react'
-import { KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import React, { useEffect, useRef, useState } from 'react'
+import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import Toast from 'react-native-toast-message'
+
+// Import the hook
+import { useChatWebSocket } from '@/hooks/useChatWebSocket'
+import { getToken } from '@/utils/storage'
 
 const Chats = () => {
+    // 1. Get Params
+    const { id: otherUserIdParam, productId } = useLocalSearchParams();
+    const otherUserId = Number(otherUserIdParam); // Ensure number for logic
+    const { user } = useAuthStore();
+    const [token, setToken] = useState<string | null>(null);
 
-    const { id } = useLocalSearchParams();
+    const [conversation, setConversation] = useState<Conversation | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [messageText, setMessageText] = useState('');
 
-    const chat = getChatById(id as string);
-    const message = getMessageById(id as string);
+    // Ref for scroll to bottom
+    const scrollViewRef = useRef<ScrollView>(null);
+
+    // Fetch token on mount
+    useEffect(() => {
+        getToken().then(t => setToken(t));
+    }, []);
+
+    // 2. Fetch Initial History
+    useEffect(() => {
+        const fetchConversation = async () => {
+            if (!otherUserId || !productId) return;
+            try {
+                setIsLoading(true);
+                const data = await messagesService.getConversation(otherUserId.toString(), productId as string);
+                setConversation(data);
+            } catch (error) {
+                console.error("Failed to fetch conversation", error);
+                Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to load conversation' });
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchConversation();
+    }, [otherUserId, productId]);
+
+    // 3. Helper to handle incoming socket message
+    // The socket response doesn't have senderId, so we infer it based on receiverId
+    const handleNewMessage = (socketMsg: any) => {
+        if (!conversation || !user) return;
+
+        // Logic: If I am the receiver, the sender is the 'other user'. 
+        // If I am NOT the receiver, I am the sender.
+        const isMeReceiver = socketMsg.receiverId === user.id;
+        const senderId = isMeReceiver ? otherUserId : user.id;
+
+        const newMessage = {
+            id: socketMsg.messageId,
+            content: socketMsg.content,
+            sentAt: socketMsg.sentAt,
+            senderId: senderId,
+            receiverId: socketMsg.receiverId,
+            read: false
+        };
+
+        setConversation(prev => {
+            if (!prev) return null;
+            return {
+                ...prev,
+                messages: [...(prev.messages || []), newMessage]
+            };
+        });
+
+        // Scroll to bottom shortly after render
+        setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100);
+    };
+
+    // 4. Initialize WebSocket Hook
+    const { isConnected, sendMessage } = useChatWebSocket({
+        conversationId: conversation?.id, // Will be null initially, so hook waits
+        token: token || '',
+        onMessageReceived: handleNewMessage
+    });
+
+    // 5. Send Handler
+    const handleSend = () => {
+        if (!messageText.trim() || !conversation) return;
+
+        const success = sendMessage(
+            Number(productId),
+            otherUserId,
+            messageText
+        );
+
+        if (success) {
+            setMessageText('');
+        } else {
+            Toast.show({ type: 'error', text1: 'Connection Error', text2: 'Not connected to chat server.' });
+        }
+    };
+
+    if (isLoading) {
+        return (
+            <SafeAreaView className='bg-background h-full items-center justify-center'>
+                <ActivityIndicator size="large" color="#72C69B" />
+            </SafeAreaView>
+        )
+    }
+
+    const userAvatar = conversation?.username
+        ? `https://ui-avatars.com/api/?name=${conversation.username}&background=random`
+        : "https://i.pravatar.cc/150?img=12";
 
     return (
         <SafeAreaView className='bg-background h-full'>
-            <KeyboardAvoidingView 
+            <KeyboardAvoidingView
                 className='flex-1'
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                 keyboardVerticalOffset={4}
             >
-                <View className='px-5 border-b border-b-borderPrimary pb-4 mb-5'>
+                {/* HEADER */}
+                <View className='px-5 border-b border-b-borderPrimary pb-4 mb-2'>
                     <View className="flex flex-row items-center justify-center mt-5 relative">
                         <View className='flex-row items-center gap-4'>
                             <Image
-                                source={{ uri: message?.userAvatar }}
+                                source={{ uri: userAvatar }}
                                 style={{ width: 48, height: 48, borderRadius: 9999 }}
                                 contentFit='cover'
                             />
                             <Text className='text-textPrimary font-bold text-lg' numberOfLines={1}>
-                                {message?.userName}
+                                {conversation?.username || "User"}
                             </Text>
                         </View>
-
 
                         <TouchableOpacity className='absolute left-0' onPress={() => router.back()} activeOpacity={0.5}>
                             <MaterialIcons name="arrow-back" size={32} color="black" />
                         </TouchableOpacity>
 
-                        <TouchableOpacity className='absolute right-0' onPress={() => { }} activeOpacity={0.5}>
-                            <Entypo name="dots-three-vertical" size={24} color="black" />
-                        </TouchableOpacity>
+                        {/* Connection Status Indicator (Optional Debugging) */}
+                        <View className={`absolute right-0 w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
                     </View>
                 </View>
 
-                {chat && <ScrollView
+                {/* PRODUCT INFO */}
+                {conversation?.product && (
+                    <View className="mx-5 mb-4 p-3 bg-white rounded-lg border border-borderPrimary flex-row items-center gap-3 shadow-sm shadow-gray-100">
+                        {conversation.product.images && conversation.product.images[0] ? (
+                            <Image
+                                source={{ uri: conversation.product.images[0] }}
+                                style={{ width: 48, height: 48, borderRadius: 8 }}
+                                contentFit='cover'
+                            />
+                        ) : (
+                            <View className="w-12 h-12 bg-gray-200 rounded-lg items-center justify-center">
+                                <MaterialIcons name="image" size={24} color="gray" />
+                            </View>
+                        )}
+                        <View className="flex-1">
+                            <Text className="text-textPrimary font-semibold" numberOfLines={1}>
+                                {conversation.product.title}
+                            </Text>
+                            <Text className="text-primary font-bold">
+                                ${conversation.product.price}
+                                {conversation.product.status === 'SOLD' && (
+                                    <Text className="text-red-500 font-bold ml-2"> • SOLD</Text>
+                                )}
+                            </Text>
+                        </View>
+                    </View>
+                )}
+
+                {/* MESSAGES LIST */}
+                <ScrollView
+                    ref={scrollViewRef}
                     showsVerticalScrollIndicator={false}
                     contentContainerStyle={{ paddingBottom: 20 }}
+                    onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
                 >
-                    {chat.map((message, index) => (
-                        <View key={index} className={`px-5 mb-3 ${message.isSentByMe ? 'items-end' : 'items-start'}`}>
-                            <View className={`${message.isSentByMe ? 'bg-primary' : 'bg-borderPrimary'} rounded-lg p-3 max-w-[80%]`}>
-                                <Text className={`${message.isSentByMe ? 'text-white' : 'text-textPrimary'}`}>{message.content}</Text>
+                    {conversation?.messages?.map((message, index) => {
+                        const isSentByMe = message.senderId === user?.id;
+                        return (
+                            <View key={index} className={`px-5 mb-3 ${isSentByMe ? 'items-end' : 'items-start'}`}>
+                                <View className={`${isSentByMe ? 'bg-primary' : 'bg-borderPrimary'} rounded-lg p-3 max-w-[80%]`}>
+                                    <Text className={`${isSentByMe ? 'text-white' : 'text-textPrimary'}`}>{message.content}</Text>
+                                </View>
+                                <Text className='text-textSecondary text-xs mt-1'>
+                                    {new Date(message.sentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </Text>
                             </View>
-                            <Text className='text-textSecondary text-xs mt-1'>{new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
-                        </View>
-                    ))}
+                        )
+                    })}
                 </ScrollView>
-                }
 
-
+                {/* INPUT AREA */}
                 <View className='border-t border-borderPrimary px-5 py-3 bg-white flex-row items-center gap-4'>
                     <TouchableOpacity onPress={() => { }} activeOpacity={0.5}>
                         <AntDesign name="plus-circle" size={20} color="#72C69B" />
                     </TouchableOpacity>
                     <View className='flex-1'>
-                        <TextInput className='px-4 py-2.5 bg-background rounded-full text-textPrimary' placeholder="Type a message..."></TextInput>
+                        <TextInput
+                            className='px-4 py-2.5 bg-background rounded-full text-textPrimary'
+                            placeholder={isConnected ? "Type a message..." : "Connecting..."}
+                            value={messageText}
+                            onChangeText={setMessageText}
+                            editable={isConnected} // Disable if not connected
+                        ></TextInput>
                     </View>
-                    <TouchableOpacity className='w-12 h-12 rounded-full bg-primary items-center justify-center' onPress={() => { }} activeOpacity={0.5}>
+                    <TouchableOpacity
+                        className={`w-12 h-12 rounded-full items-center justify-center ${isConnected ? 'bg-primary' : 'bg-gray-400'}`}
+                        onPress={handleSend}
+                        activeOpacity={0.5}
+                        disabled={!isConnected}
+                    >
                         <MaterialIcons name="send" size={20} color="#fff" />
                     </TouchableOpacity>
                 </View>

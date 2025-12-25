@@ -132,7 +132,7 @@ const Details = () => {
 
     const handleContactSeller = () => {
         if (isOwnProduct) return;
-        router.push(`/chats/${product?.sellerId}`);
+        router.push(`/chats/${product?.sellerId}?productId=${product?.id}`);
     };
 
     // Loading state - full screen

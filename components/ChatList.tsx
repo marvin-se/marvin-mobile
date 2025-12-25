@@ -38,7 +38,7 @@ const ChatList = ({ conversations }: ChatListProps) => {
                     contentContainerStyle={{ paddingBottom: 48 }}
                 >
                     {filteredChats.map((chat, index) => (
-                        <TouchableOpacity key={chat.id} onPress={() => router.navigate(`/chats/${chat.id}`)} activeOpacity={0.3}>
+                        <TouchableOpacity key={chat.id} onPress={() => router.navigate(`/chats/${chat.userId}?productId=${chat.product?.id}`)} activeOpacity={0.3}>
                             <View className={`py-5 flex-row justify-between items-center gap-3 ${index !== filteredChats.length - 1 ? 'border-b border-b-borderPrimary' : ''}`}>
                                 <View className='flex-row items-center gap-4 flex-1'>
                                     <Image
