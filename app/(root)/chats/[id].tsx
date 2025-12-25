@@ -1,4 +1,5 @@
 import { messagesService } from '@/api/services/messages'
+import { productService } from '@/api/services/product'
 import { useAuthStore } from '@/store/useAuthStore'
 import { Conversation } from '@/types/api'
 import { AntDesign, MaterialIcons } from '@expo/vector-icons'
@@ -11,10 +12,16 @@ import Toast from 'react-native-toast-message'
 
 // Import the hook
 import { useChatWebSocket } from '@/hooks/useChatWebSocket'
+import { useProductStore } from '@/store/useProductStore'
 import { getAvatarUrl } from '@/utils/avatar'
 import { getToken } from '@/utils/storage'
 
 const Chats = () => {
+
+
+    const { imageUrlCache, cacheImageUrls } = useProductStore();
+
+
     // 1. Get Params
     const { id: otherUserIdParam, productId } = useLocalSearchParams();
     const otherUserId = Number(otherUserIdParam); // Ensure number for logic
@@ -54,6 +61,40 @@ const Chats = () => {
 
         fetchConversation();
     }, [otherUserId, productId]);
+
+    // Added: Fetch signed images if needed
+    useEffect(() => {
+        const loadSignedImages = async () => {
+            const currentProductId = Number(productId);
+
+            // Basic checks: have a product, have images, and not already cached
+            if (!conversation?.product?.images?.length) return;
+
+            // If already in cache (and not empty array), we are good - component reads from cache
+            if (imageUrlCache[currentProductId] && imageUrlCache[currentProductId].length > 0) return;
+
+            const firstImage = conversation.product.images[0];
+
+            // Only fetch if it looks like a raw S3 key (starts with 'products/')
+            // If it's a full http/https URL, might not need signing (unless your system always requires it)
+            if (firstImage.startsWith('products/')) {
+                try {
+                    const response = await productService.getProductImages(currentProductId);
+                    if (response.images && response.images.length > 0) {
+                        const urls = response.images.map(img => img.url);
+                        cacheImageUrls(currentProductId, urls);
+                    }
+                } catch (error) {
+                    console.error("Failed to load signed images for chat product", error);
+                }
+            }
+        };
+
+        if (conversation?.product && productId) {
+            loadSignedImages();
+        }
+    }, [conversation, productId, imageUrlCache]);
+
 
     // 3. Helper to handle incoming socket message
     // The socket response doesn't have senderId, so we infer it based on receiverId
@@ -120,6 +161,20 @@ const Chats = () => {
 
     const userAvatar = getAvatarUrl(conversation?.username);
 
+    // Determine the product image to show
+    let productImageSource = null;
+    if (conversation?.product) {
+        const prodId = conversation.product.id;
+        // Check cache first
+        if (imageUrlCache[prodId] && imageUrlCache[prodId].length > 0) {
+            productImageSource = { uri: imageUrlCache[prodId][0] };
+        }
+        // Fallback to original if available
+        else if (conversation.product.images && conversation.product.images.length > 0) {
+            productImageSource = { uri: conversation.product.images[0] };
+        }
+    }
+
     return (
         <SafeAreaView className='bg-background h-full'>
             <KeyboardAvoidingView
@@ -153,9 +208,9 @@ const Chats = () => {
                 {/* PRODUCT INFO */}
                 {conversation?.product && (
                     <View className="mx-5 mb-4 p-3 bg-white rounded-lg border border-borderPrimary flex-row items-center gap-3 shadow-sm shadow-gray-100">
-                        {conversation.product.images && conversation.product.images[0] ? (
+                        {productImageSource ? (
                             <Image
-                                source={{ uri: conversation.product.images[0] }}
+                                source={productImageSource}
                                 style={{ width: 48, height: 48, borderRadius: 8 }}
                                 contentFit='cover'
                             />
