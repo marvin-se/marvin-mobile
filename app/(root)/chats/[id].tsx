@@ -185,7 +185,7 @@ const Chats = () => {
                 {/* HEADER */}
                 <View className='px-5 border-b border-b-borderPrimary pb-4 mb-2'>
                     <View className="flex flex-row items-center justify-center mt-5 relative">
-                        <TouchableOpacity 
+                        <TouchableOpacity
                             className='flex-row items-center gap-4'
                             onPress={() => router.push({
                                 pathname: `/profile/[userId]`,
@@ -266,28 +266,37 @@ const Chats = () => {
                 </ScrollView>
 
                 {/* INPUT AREA */}
-                <View className='border-t border-borderPrimary px-5 py-3 bg-white flex-row items-center gap-4'>
-                    <TouchableOpacity onPress={() => { }} activeOpacity={0.5}>
-                        <AntDesign name="plus-circle" size={20} color="#72C69B" />
-                    </TouchableOpacity>
-                    <View className='flex-1'>
-                        <TextInput
-                            className='px-4 py-2.5 bg-background rounded-full text-textPrimary'
-                            placeholder={isConnected ? "Type a message..." : "Connecting..."}
-                            value={messageText}
-                            onChangeText={setMessageText}
-                            editable={isConnected} // Disable if not connected
-                        ></TextInput>
+                {conversation?.product?.status === 'SOLD' ? (
+                    <View className='border-t border-borderPrimary px-5 py-6 bg-gray-50 flex-row items-center justify-center gap-2 mb-safe'>
+                        <MaterialIcons name="lock-outline" size={20} color="#9CA3AF" />
+                        <Text className='text-textSecondary font-medium'>
+                            This item is sold. Chat is closed.
+                        </Text>
                     </View>
-                    <TouchableOpacity
-                        className={`w-12 h-12 rounded-full items-center justify-center ${isConnected ? 'bg-primary' : 'bg-gray-400'}`}
-                        onPress={handleSend}
-                        activeOpacity={0.5}
-                        disabled={!isConnected}
-                    >
-                        <MaterialIcons name="send" size={20} color="#fff" />
-                    </TouchableOpacity>
-                </View>
+                ) : (
+                    <View className='border-t border-borderPrimary px-5 py-3 bg-white flex-row items-center gap-4'>
+                        <TouchableOpacity onPress={() => { }} activeOpacity={0.5}>
+                            <AntDesign name="plus-circle" size={20} color="#72C69B" />
+                        </TouchableOpacity>
+                        <View className='flex-1'>
+                            <TextInput
+                                className='px-4 py-2.5 bg-background rounded-full text-textPrimary'
+                                placeholder={isConnected ? "Type a message..." : "Connecting..."}
+                                value={messageText}
+                                onChangeText={setMessageText}
+                                editable={isConnected} // Disable if not connected
+                            ></TextInput>
+                        </View>
+                        <TouchableOpacity
+                            className={`w-12 h-12 rounded-full items-center justify-center ${isConnected ? 'bg-primary' : 'bg-gray-400'}`}
+                            onPress={handleSend}
+                            activeOpacity={0.5}
+                            disabled={!isConnected}
+                        >
+                            <MaterialIcons name="send" size={20} color="#fff" />
+                        </TouchableOpacity>
+                    </View>
+                )}
             </KeyboardAvoidingView>
         </SafeAreaView>
     )

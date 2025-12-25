@@ -77,8 +77,14 @@ const ChatList = ({ conversations, refreshing, onRefresh }: ChatListProps) => {
                                     <Text className='text-textSecondary text-sm'>
                                         {chat.lastMessage ? formatTimeAgo(chat.lastMessage.sentAt) : ''}
                                     </Text>
-                                    {chat.lastMessage && !chat.lastMessage.read && (
-                                        <Entypo name="dot-single" size={32} color="#72c69b" className='-mr-3' />
+                                    {chat.product?.status === 'SOLD' ? (
+                                        <View className="bg-gray-100 px-2 py-1 rounded mt-1">
+                                            <Text className="text-textSecondary text-[10px] font-bold">SOLD</Text>
+                                        </View>
+                                    ) : (
+                                        chat.lastMessage && !chat.lastMessage.read && (
+                                            <Entypo name="dot-single" size={32} color="#72c69b" className='-mr-3' />
+                                        )
                                     )}
                                 </View>
                             </View>
@@ -86,7 +92,7 @@ const ChatList = ({ conversations, refreshing, onRefresh }: ChatListProps) => {
                     ))
                 )}
             </ScrollView>
-        </View>
+        </View >
     )
 }
 
