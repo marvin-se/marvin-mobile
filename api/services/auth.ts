@@ -107,11 +107,14 @@ export const authService = {
     },
 
     unblockUser: async (userId: number): Promise<void> => {
-        await apiClient.post(`/user/${userId}/unblock`);
+        await apiClient.delete(`/user/${userId}/unblock`);
     },
 
     getBlockedUsers: async (): Promise<User[]> => {
-        const response = await apiClient.get<User[]>("/user/blocked");
+        const response = await apiClient.get<{ numberOfBlocked: number; userList: User[] }>("/user/blocked");
+        return response.data.userList;
+    },
+
     getUniversities: async (): Promise<{ name: string }[]> => {
         const response = await apiClient.get<{ name: string }[]>("/universities");
         return response.data;

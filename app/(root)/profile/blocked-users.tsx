@@ -106,7 +106,7 @@ const BlockedUsers = () => {
                                 No Blocked Users
                             </Text>
                             <Text className="text-base text-textSecondary text-center mt-2">
-                                You haven't blocked any users yet.
+                                You haven&apos;t blocked any users yet.
                             </Text>
                         </View>
                     }
