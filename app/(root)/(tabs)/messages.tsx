@@ -13,6 +13,8 @@ const Messages = () => {
   const [conversations, setConversations] = useState<Conversation[]>(cachedConversations)
   const [loading, setLoading] = useState(cachedConversations.length === 0)
 
+  const [refreshing, setRefreshing] = useState(false)
+
   useFocusEffect(
     useCallback(() => {
       fetchConversations()
@@ -28,8 +30,14 @@ const Messages = () => {
       console.error('Error fetching conversations:', error)
     } finally {
       setLoading(false)
+      setRefreshing(false)
     }
   }
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true)
+    fetchConversations()
+  }, [])
 
   return (
     <SafeAreaView className='bg-background h-full'>
@@ -43,10 +51,10 @@ const Messages = () => {
 
       {loading ? (
         <View className='flex-1 items-center justify-center'>
-          <ActivityIndicator size='large'/>
+          <ActivityIndicator size='large' />
         </View>
       ) : (
-        <ChatList conversations={conversations} />
+        <ChatList conversations={conversations} refreshing={refreshing} onRefresh={onRefresh} />
       )}
     </SafeAreaView>
   )

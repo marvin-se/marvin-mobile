@@ -6,8 +6,6 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8080/campus
 // Example: http://localhost:8080/campustrade -> ws://localhost:8080/campustrade/wst
 const SOCKET_URL = API_URL.replace(/^http/, 'ws') + '/wst';
 
-console.log('🔌 WebSocket URL:', SOCKET_URL);
-
 interface UseChatWebSocketProps {
     conversationId?: number;
     token: string;
@@ -31,12 +29,11 @@ export const useChatWebSocket = ({ conversationId, token, onMessageReceived }: U
             forceBinaryWSFrames: true,
             appendMissingNULLonIncoming: true,
 
-            debug: (str) => console.log('STOMP: ' + str),
+            debug: (str) => {},
             onWebSocketError: (error) => console.error('WebSocket Error: ', error),
 
             onConnect: () => {
                 setIsConnected(true);
-                console.log(`Connected to WS for Conversation ${conversationId}`);
 
                 // Subscribe to the conversation topic
                 client.subscribe(`/topic/conversations/${conversationId}`, (message) => {
