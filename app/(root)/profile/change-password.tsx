@@ -1,21 +1,21 @@
+import { authService } from "@/api/services/auth";
+import Button from "@/components/auth/Button";
+import InputField from "@/components/auth/InputField";
+import { useAuthStore } from "@/store/useAuthStore";
+import { RequestType } from "@/types/auth";
+import { MaterialIcons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-    View,
-    Text,
-    ScrollView,
-    TouchableOpacity,
     KeyboardAvoidingView,
     Platform,
+    ScrollView,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
-import { MaterialIcons } from "@expo/vector-icons";
 import Toast from "react-native-toast-message";
-import InputField from "@/components/auth/InputField";
-import Button from "@/components/auth/Button";
-import { authService } from "@/api/services/auth";
-import { RequestType } from "@/types/auth";
-import { useAuthStore } from "@/store/useAuthStore";
 
 const ChangePassword = () => {
     const router = useRouter();
@@ -86,10 +86,10 @@ const ChangePassword = () => {
             await authService.changePassword({
                 email: user?.email ?? "",
                 token: null,
-                oldPassword: null,
+                oldPassword: currentPassword,
                 newPassword: newPassword,
                 confirmNewPassword: confirmPassword,
-                type: RequestType.FORGOT_PASSWORD
+                type: RequestType.CHANGE_PASSWORD
             });
 
             Toast.show({

@@ -4,9 +4,10 @@ import ProfileSection from "@/components/profile/ProfileSection";
 import StatCard from "@/components/profile/StatCard";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useProductStore } from "@/store/useProductStore";
+import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useEffect } from "react";
-import { Alert, ScrollView, Text, View } from "react-native";
+import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const Profile = () => {
@@ -99,21 +100,29 @@ const Profile = () => {
                         icon="lock"
                         title="Change Password"
                         onPress={() => router.push("/profile/change-password")}
-                    />
-                    <ProfileMenuItem
-                        icon="logout"
-                        title="Logout"
-                        onPress={handleLogout}
-                        textColor="text-red-500"
-                    />
-                    <ProfileMenuItem
-                        icon="delete"
-                        title="Delete Account"
-                        onPress={() => { }}
                         showBorder={false}
-                        textColor="text-red-500"
                     />
                 </ProfileSection>
+
+                <View className="px-5 mt-6 mb-10 gap-3">
+                    <TouchableOpacity
+                        onPress={handleLogout}
+                        className="flex-row items-center justify-center py-4 bg-white border border-red-400 rounded-xl"
+                        activeOpacity={0.7}
+                    >
+                        <MaterialIcons name="logout" size={22} color="#EF4444" />
+                        <Text className="text-red-500 text-lg font-semibold ml-2">Logout</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        onPress={() => router.push("/profile/delete-account")}
+                        className="flex-row items-center justify-center py-4 rounded-xl"
+                        activeOpacity={0.7}
+                    >
+                        <MaterialIcons name="delete-outline" size={22} color="#9CA3AF" />
+                        <Text className="text-gray-400 text-base font-medium ml-2">Delete Account</Text>
+                    </TouchableOpacity>
+                </View>
             </ScrollView>
         </SafeAreaView>
     );

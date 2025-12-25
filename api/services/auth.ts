@@ -11,6 +11,40 @@ import {
 } from "@/types/auth";
 
 export const authService = {
+    // Profile Picture APIs
+    getProfilePicturePresign: async (): Promise<{ uploadUrl: string; key: string }> => {
+        const response = await apiClient.post<{ uploadUrl: string; key: string }>("/user/profile-picture/presign");
+        return response.data;
+    },
+
+    uploadProfilePicture: async (uploadUrl: string, imageUri: string, contentType: string): Promise<void> => {
+        const response = await fetch(imageUri);
+        const blob = await response.blob();
+        const uploadResponse = await fetch(uploadUrl, {
+            method: 'PUT',
+            body: blob,
+            headers: {
+                'Content-Type': contentType,
+            },
+        });
+        if (!uploadResponse.ok) {
+            throw new Error('Failed to upload profile picture');
+        }
+    },
+
+    setProfilePicture: async (key: string): Promise<void> => {
+        await apiClient.put("/user/profile-picture", { key });
+    },
+
+    getMyProfilePicture: async (): Promise<{ url: string }> => {
+        const response = await apiClient.get<{ url: string }>("/user/profile-picture/me");
+        return response.data;
+    },
+
+    getUserProfilePicture: async (userId: number): Promise<{ url: string }> => {
+        const response = await apiClient.get<{ url: string }>(`/user/${userId}/profile-picture`);
+        return response.data;
+    },
     signIn: async (data: SignInRequest): Promise<SignInResponse> => {
         const response = await apiClient.post<SignInResponse>("/auth/login", data);
         return response.data;
@@ -60,7 +94,7 @@ export const authService = {
     },
 
     deleteAccount: async (): Promise<void> => {
-        await apiClient.delete("/user/me");
+        await apiClient.delete("/user/delete-profile");
     },
 
     getUserById: async (userId: number): Promise<User> => {
@@ -78,6 +112,8 @@ export const authService = {
 
     getBlockedUsers: async (): Promise<User[]> => {
         const response = await apiClient.get<User[]>("/user/blocked");
+    getUniversities: async (): Promise<{ name: string }[]> => {
+        const response = await apiClient.get<{ name: string }[]>("/universities");
         return response.data;
     },
 };

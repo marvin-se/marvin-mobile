@@ -1,18 +1,18 @@
+import { authService } from "@/api/services/auth";
+import { useAuthStore } from "@/store/useAuthStore";
+import { MaterialIcons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-    View,
-    Text,
-    ScrollView,
-    TouchableOpacity,
-    Alert,
     ActivityIndicator,
+    Alert,
+    ScrollView,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
-import { MaterialIcons } from "@expo/vector-icons";
 import Toast from "react-native-toast-message";
-import { useAuthStore } from "@/store/useAuthStore";
-import { authService } from "@/api/services/auth";
 
 const DeleteAccount = () => {
     const router = useRouter();

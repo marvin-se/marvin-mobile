@@ -34,10 +34,13 @@ const History = () => {
                 productService.getSalesHistory(),
                 productService.getPurchasesHistory(),
             ]);
-
-            // API response'dan transactions array'ini al
-            const salesData = salesResponse?.transactions || [];
-            const purchasesData = purchasesResponse?.transactions || [];
+            
+            const salesData = Array.isArray(salesResponse) 
+                ? salesResponse 
+                : ((salesResponse as any)?.transactions || []);
+            const purchasesData = Array.isArray(purchasesResponse) 
+                ? purchasesResponse 
+                : ((purchasesResponse as any)?.transactions || []);
 
             // Sales: Satılan ürünler - buyer bilgisini göster
             const mappedSoldItems: HistoryItemData[] = salesData.map((item: any) => ({

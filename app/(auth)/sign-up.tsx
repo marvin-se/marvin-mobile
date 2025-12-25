@@ -1,16 +1,14 @@
-import React, { useState } from "react";
-import { View } from "react-native";
-import { useRouter } from "expo-router";
-import Toast from "react-native-toast-message";
-import AuthLayout from "@/components/auth/AuthLayout";
-import FormTitle from "@/components/auth/FormTitle";
-import UniversityPicker from "@/components/auth/UniversityPicker";
-import InputField from "@/components/auth/InputField";
-import Button from "@/components/auth/Button";
-import LinkText from "@/components/auth/LinkText";
-import { UNIVERSITIES } from "@/utils/constants";
-import { validateEmail, validateStrongPassword, validatePasswordMatch, getPasswordErrorMessage } from "@/utils/validation";
 import { authService } from "@/api/services/auth";
+import AuthLayout from "@/components/auth/AuthLayout";
+import Button from "@/components/auth/Button";
+import FormTitle from "@/components/auth/FormTitle";
+import InputField from "@/components/auth/InputField";
+import LinkText from "@/components/auth/LinkText";
+import UniversityPicker from "@/components/auth/UniversityPicker";
+import { getPasswordErrorMessage, validateEmail, validatePasswordMatch, validateStrongPassword } from "@/utils/validation";
+import { useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
+import Toast from "react-native-toast-message";
 
 const SignUp = () => {
     const router = useRouter();
@@ -18,12 +16,37 @@ const SignUp = () => {
     const [email, setEmail] = useState("");
     const [openDropdown, setOpenDropdown] = useState(false);
     const [university, setUniversity] = useState<string | null>(null);
-    const [items, setItems] = useState(UNIVERSITIES);
+    const [items, setItems] = useState<{ label: string; value: string }[]>([]);
+    const [isLoadingUniversities, setIsLoadingUniversities] = useState(true);
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+
+    useEffect(() => {
+        const fetchUniversities = async () => {
+            try {
+                const response = await authService.getUniversities();
+                // Response: [{ name: "..." }, { name: "..." }, ...]
+                const formattedItems = response.map((u: { name: string }) => ({
+                    label: u.name,
+                    value: u.name
+                }));
+                setItems(formattedItems);
+            } catch (error) {
+                console.error("Failed to fetch universities:", error);
+                Toast.show({
+                    type: "error",
+                    text1: "Error",
+                    text2: "Failed to load universities.",
+                });
+            } finally {
+                setIsLoadingUniversities(false);
+            }
+        };
+        fetchUniversities();
+    }, []);
 
     const handleSignUp = async () => {
         if (!fullName || !email || !university || !password || !confirmPassword) {

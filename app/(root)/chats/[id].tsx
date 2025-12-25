@@ -6,7 +6,7 @@ import { AntDesign, MaterialIcons } from '@expo/vector-icons'
 import { Image } from 'expo-image'
 import { router, useLocalSearchParams } from 'expo-router'
 import React, { useEffect, useRef, useState } from 'react'
-import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import Toast from 'react-native-toast-message'
 
@@ -30,7 +30,51 @@ const Chats = () => {
 
     const [conversation, setConversation] = useState<Conversation | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [isMarkingSold, setIsMarkingSold] = useState(false);
     const [messageText, setMessageText] = useState('');
+
+    // Handle Mark as Sold
+    const handleMarkAsSold = async () => {
+        const product = conversation?.product;
+        if (!product) return;
+
+        Alert.alert(
+            "Mark as Sold",
+            "Are you sure you want to mark this item as sold? This action cannot be undone.",
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Mark as Sold",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            setIsMarkingSold(true);
+                            await productService.updateProductStatus(product.id, 'SOLD', conversation?.id);
+
+                            // Update local state
+                            setConversation(prev => {
+                                if (!prev || !prev.product) return prev;
+                                return {
+                                    ...prev,
+                                    product: {
+                                        ...prev.product,
+                                        status: 'SOLD'
+                                    }
+                                };
+                            });
+
+                            Toast.show({ type: 'success', text1: 'Success', text2: 'Item marked as sold' });
+                        } catch (error) {
+                            console.error("Failed to mark as sold", error);
+                            Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to mark item as sold' });
+                        } finally {
+                            setIsMarkingSold(false);
+                        }
+                    }
+                }
+            ]
+        );
+    };
 
     // Ref for scroll to bottom
     const scrollViewRef = useRef<ScrollView>(null);
@@ -185,7 +229,17 @@ const Chats = () => {
                 {/* HEADER */}
                 <View className='px-5 border-b border-b-borderPrimary pb-4 mb-2'>
                     <View className="flex flex-row items-center justify-center mt-5 relative">
-                        <View className='flex-row items-center gap-4'>
+                        <TouchableOpacity
+                            className='flex-row items-center gap-4'
+                            onPress={() => router.push({
+                                pathname: `/profile/[userId]`,
+                                params: {
+                                    userId: String(otherUserId),
+                                    name: conversation?.username || '',
+                                }
+                            })}
+                            activeOpacity={0.7}
+                        >
                             <Image
                                 source={{ uri: userAvatar }}
                                 style={{ width: 48, height: 48, borderRadius: 9999 }}
@@ -194,7 +248,7 @@ const Chats = () => {
                             <Text className='text-textPrimary font-bold text-lg' numberOfLines={1}>
                                 {conversation?.username || "User"}
                             </Text>
-                        </View>
+                        </TouchableOpacity>
 
                         <TouchableOpacity className='absolute left-0' onPress={() => router.back()} activeOpacity={0.5}>
                             <MaterialIcons name="arrow-back" size={32} color="black" />
@@ -215,9 +269,11 @@ const Chats = () => {
                                 contentFit='cover'
                             />
                         ) : (
-                            <View className="w-12 h-12 bg-gray-200 rounded-lg items-center justify-center">
-                                <MaterialIcons name="image" size={24} color="gray" />
-                            </View>
+                            conversation.product.status !== 'SOLD' && (
+                                <View className="w-12 h-12 bg-gray-200 rounded-lg items-center justify-center">
+                                    <MaterialIcons name="image" size={24} color="gray" />
+                                </View>
+                            )
                         )}
                         <View className="flex-1">
                             <Text className="text-textPrimary font-semibold" numberOfLines={1}>
@@ -230,6 +286,20 @@ const Chats = () => {
                                 )}
                             </Text>
                         </View>
+
+                        {conversation.product.status !== 'SOLD' && conversation.product.sellerId === user?.id && (
+                            <TouchableOpacity
+                                onPress={handleMarkAsSold}
+                                disabled={isMarkingSold}
+                                className={`px-3 py-2 rounded-lg border border-gray-200 ${isMarkingSold ? 'bg-gray-100' : 'bg-gray-200'}`}
+                            >
+                                {isMarkingSold ? (
+                                    <ActivityIndicator size="small" color="#6B7280" />
+                                ) : (
+                                    <Text className="text-textSecondary font-bold text-xs">Mark as sold</Text>
+                                )}
+                            </TouchableOpacity>
+                        )}
                     </View>
                 )}
 
@@ -256,28 +326,37 @@ const Chats = () => {
                 </ScrollView>
 
                 {/* INPUT AREA */}
-                <View className='border-t border-borderPrimary px-5 py-3 bg-white flex-row items-center gap-4'>
-                    <TouchableOpacity onPress={() => { }} activeOpacity={0.5}>
-                        <AntDesign name="plus-circle" size={20} color="#72C69B" />
-                    </TouchableOpacity>
-                    <View className='flex-1'>
-                        <TextInput
-                            className='px-4 py-2.5 bg-background rounded-full text-textPrimary'
-                            placeholder={isConnected ? "Type a message..." : "Connecting..."}
-                            value={messageText}
-                            onChangeText={setMessageText}
-                            editable={isConnected} // Disable if not connected
-                        ></TextInput>
+                {conversation?.product?.status === 'SOLD' ? (
+                    <View className='border-t border-borderPrimary px-5 py-6 bg-gray-50 flex-row items-center justify-center gap-2 mb-safe'>
+                        <MaterialIcons name="lock-outline" size={20} color="#9CA3AF" />
+                        <Text className='text-textSecondary font-medium'>
+                            This item is sold. Chat is closed.
+                        </Text>
                     </View>
-                    <TouchableOpacity
-                        className={`w-12 h-12 rounded-full items-center justify-center ${isConnected ? 'bg-primary' : 'bg-gray-400'}`}
-                        onPress={handleSend}
-                        activeOpacity={0.5}
-                        disabled={!isConnected}
-                    >
-                        <MaterialIcons name="send" size={20} color="#fff" />
-                    </TouchableOpacity>
-                </View>
+                ) : (
+                    <View className='border-t border-borderPrimary px-5 py-3 bg-white flex-row items-center gap-4'>
+                        <TouchableOpacity onPress={() => { }} activeOpacity={0.5}>
+                            <AntDesign name="plus-circle" size={20} color="#72C69B" />
+                        </TouchableOpacity>
+                        <View className='flex-1'>
+                            <TextInput
+                                className='px-4 py-2.5 bg-background rounded-full text-textPrimary'
+                                placeholder={isConnected ? "Type a message..." : "Connecting..."}
+                                value={messageText}
+                                onChangeText={setMessageText}
+                                editable={isConnected} // Disable if not connected
+                            ></TextInput>
+                        </View>
+                        <TouchableOpacity
+                            className={`w-12 h-12 rounded-full items-center justify-center ${isConnected ? 'bg-primary' : 'bg-gray-400'}`}
+                            onPress={handleSend}
+                            activeOpacity={0.5}
+                            disabled={!isConnected}
+                        >
+                            <MaterialIcons name="send" size={20} color="#fff" />
+                        </TouchableOpacity>
+                    </View>
+                )}
             </KeyboardAvoidingView>
         </SafeAreaView>
     )

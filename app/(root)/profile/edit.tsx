@@ -1,21 +1,23 @@
+import { authService } from "@/api/services/auth";
+import Button from "@/components/auth/Button";
+import InputField from "@/components/auth/InputField";
+import { useAuthStore } from "@/store/useAuthStore";
+import { getAvatarUrl } from "@/utils/avatar";
+import { MaterialIcons } from "@expo/vector-icons";
+import { Image } from "expo-image";
+import * as ImagePicker from "expo-image-picker";
+import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-    View,
-    Text,
-    ScrollView,
-    TouchableOpacity,
     KeyboardAvoidingView,
     Platform,
+    ScrollView,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
-import { Image } from "expo-image";
-import { MaterialIcons } from "@expo/vector-icons";
 import Toast from "react-native-toast-message";
-import InputField from "@/components/auth/InputField";
-import Button from "@/components/auth/Button";
-import { useAuthStore } from "@/store/useAuthStore";
-import { authService } from "@/api/services/auth";
 
 const EditProfile = () => {
     const router = useRouter();
@@ -23,11 +25,38 @@ const EditProfile = () => {
 
     const [fullName, setFullName] = useState(user?.fullName || "");
     const [phone, setPhone] = useState(user?.phoneNumber || "");
+
     const [isLoading, setIsLoading] = useState(false);
+    const [avatar, setAvatar] = useState(user?.profilePicUrl || "");
 
     const email = user?.email || "";
     const university = user?.universityName || "";
-    const avatar = user?.profilePicUrl || "https://i.pravatar.cc/150";
+    const handlePickAvatar = async () => {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+            Toast.show({ type: 'error', text1: 'Permission to access gallery is required!' });
+            return;
+        }
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: true,
+            aspect: [1, 1],
+            quality: 0.7,
+        });
+        if (!result.canceled && result.assets && result.assets.length > 0) {
+            const imageUri = result.assets[0].uri;
+            try {
+                const presign = await authService.getProfilePicturePresign();
+                await authService.uploadProfilePicture(presign.uploadUrl, imageUri, 'image/jpeg');
+                await authService.setProfilePicture(presign.key);
+                const { url } = await authService.getMyProfilePicture();
+                setAvatar(url);
+                Toast.show({ type: 'success', text1: 'Profile picture updated!' });
+            } catch (error: any) {
+                Toast.show({ type: 'error', text1: 'Failed to update profile picture', text2: error.message });
+            }
+        }
+    };
 
     const handleSave = async () => {
         if (!fullName.trim()) {
@@ -99,13 +128,14 @@ const EditProfile = () => {
                     <View className="items-center mb-6">
                         <View className="relative">
                             <Image
-                                source={{ uri: avatar }}
+                                source={{ uri: getAvatarUrl(fullName, avatar) }}
                                 style={{ width: 100, height: 100, borderRadius: 50 }}
                                 contentFit="cover"
                             />
                             <TouchableOpacity
                                 className="absolute bottom-0 right-0 bg-primary p-2 rounded-full"
                                 activeOpacity={0.5}
+                                onPress={handlePickAvatar}
                             >
                                 <MaterialIcons name="camera-alt" size={20} color="white" />
                             </TouchableOpacity>

@@ -73,6 +73,10 @@ const Upload = () => {
   const [price, setPrice] = useState("");
   const [images, setImages] = useState<string[]>([]);
   const [isLoadingProduct, setIsLoadingProduct] = useState(false);
+  
+  // Edit mode için orijinal image'ları takip et
+  const [originalImages, setOriginalImages] = useState<string[]>([]); // signed URLs
+  const [originalImageKeys, setOriginalImageKeys] = useState<Map<string, string>>(new Map()); // signedUrl -> s3Key mapping
 
   const [showCategoryModal, setShowCategoryModal] = useState(false);
 
@@ -101,21 +105,45 @@ const Upload = () => {
           try {
             const response = await productService.getProductImages(productId);
             if (response.images && response.images.length > 0) {
-              const signedUrls = response.images.map(img => img.url);
+              // Duplicate key'leri filtrele (aynı key sadece bir kez)
+              const seenKeys = new Set<string>();
+              const uniqueImages = response.images.filter(img => {
+                if (seenKeys.has(img.key)) {
+                  return false;
+                }
+                seenKeys.add(img.key);
+                return true;
+              });
+              
+              const signedUrls = uniqueImages.map(img => img.url);
+              // Create mapping between signed URLs and S3 keys
+              const keyMapping = new Map<string, string>();
+              uniqueImages.forEach(img => {
+                keyMapping.set(img.url, img.key);
+              });
+              setOriginalImageKeys(keyMapping);
+              setOriginalImages(signedUrls);
               setImages(signedUrls);
             } else {
               setImages([]);
+              setOriginalImages([]);
+              setOriginalImageKeys(new Map());
             }
           } catch (imgError) {
             console.error("Failed to load signed image URLs", imgError);
             setImages([]);
+            setOriginalImages([]);
+            setOriginalImageKeys(new Map());
           }
         } else {
           // Zaten URL - direkt kullan
           setImages(product.images);
+          setOriginalImages(product.images);
         }
       } else {
         setImages([]);
+        setOriginalImages([]);
+        setOriginalImageKeys(new Map());
       }
     } catch (error: any) {
       Toast.show({
@@ -188,6 +216,33 @@ const Upload = () => {
 
       if (isEditMode && editId) {
         productId = Number(editId);
+        
+        // Silinen image'ları bul ve API ile sil (duplicate key'leri önlemek için Set kullan)
+        const removedImages = originalImages.filter(origImg => !images.includes(origImg));
+        const deletedKeys = new Set<string>();
+        
+        for (const removedImg of removedImages) {
+          const s3Key = originalImageKeys.get(removedImg);
+          if (s3Key && !deletedKeys.has(s3Key)) {
+            deletedKeys.add(s3Key);
+            try {
+              await productService.deleteImage(productId, s3Key);
+            } catch (deleteError: any) {
+              // Backend'de duplicate kayıt varsa veya başka hata olursa devam et
+              console.warn('Failed to delete image (continuing):', s3Key, deleteError?.message || deleteError);
+            }
+          }
+        }
+        
+        // Kalan orijinal image'ların S3 key'lerini al
+        const remainingOriginalKeys: string[] = [];
+        images.forEach(img => {
+          if (img.startsWith('http') && originalImageKeys.has(img)) {
+            const key = originalImageKeys.get(img);
+            if (key) remainingOriginalKeys.push(key);
+          }
+        });
+        
         await updateProduct(productId, {
           title: title.trim(),
           description: description.trim(),
@@ -195,6 +250,35 @@ const Upload = () => {
           category: category,
           images: []
         });
+        
+        // Yeni eklenen image'ları (local file URI'lar) bul
+        const newImagesToUpload = images.filter(img => !img.startsWith('http'));
+        
+        // Yeni image'ları presign et ve yükle
+        let newUploadedKeys: string[] = [];
+        if (newImagesToUpload.length > 0) {
+          const presignReq = {
+            images: newImagesToUpload.map(uri => ({
+              fileName: uri.split('/').pop() || `image_${Date.now()}.jpg`,
+              contentType: 'image/jpeg'
+            }))
+          };
+
+          const presignRes = await productService.getPresignedUrls(productId, presignReq);
+          await Promise.all(presignRes.images.map((item, index) => {
+            return productService.uploadImageToS3(item.uploadUrl, newImagesToUpload[index], 'image/jpeg');
+          }));
+          newUploadedKeys = presignRes.images.map(item => item.key);
+        }
+        
+        // Tüm image key'lerini (kalan + yeni) attach et
+        const allImageKeys = [...remainingOriginalKeys, ...newUploadedKeys];
+        if (allImageKeys.length > 0) {
+          await productService.attachImages(productId, {
+            imageKeys: allImageKeys
+          });
+        }
+        
       } else {
         const newProduct = await productService.createProduct({
           title: title.trim(),
@@ -204,28 +288,26 @@ const Upload = () => {
           images: []
         });
         productId = newProduct.id;
-      }
+        
+        const newImagesToUpload = images.filter(img => !img.startsWith('http'));
 
-      const newImagesToUpload = images.filter(img => !img.startsWith('http'));
+        if (newImagesToUpload.length > 0) {
+          const presignReq = {
+            images: newImagesToUpload.map(uri => ({
+              fileName: uri.split('/').pop() || `image_${Date.now()}.jpg`,
+              contentType: 'image/jpeg'
+            }))
+          };
 
-      if (newImagesToUpload.length > 0) {
-        const presignReq = {
-          images: newImagesToUpload.map(uri => ({
-            fileName: uri.split('/').pop() || `image_${Date.now()}.jpg`,
-            contentType: 'image/jpeg'
-          }))
-        };
-
-        const presignRes = await productService.getPresignedUrls(productId, presignReq);
-        await Promise.all(presignRes.images.map((item, index) => {
-          return productService.uploadImageToS3(item.uploadUrl, newImagesToUpload[index], 'image/jpeg');
-        }));
-        await productService.attachImages(productId, {
-          imageKeys: presignRes.images.map(item => item.key)
-        });
-      }
-
-      if (!isEditMode) {
+          const presignRes = await productService.getPresignedUrls(productId, presignReq);
+          await Promise.all(presignRes.images.map((item, index) => {
+            return productService.uploadImageToS3(item.uploadUrl, newImagesToUpload[index], 'image/jpeg');
+          }));
+          await productService.attachImages(productId, {
+            imageKeys: presignRes.images.map(item => item.key)
+          });
+        }
+        
         await productService.publishProduct(productId);
       }
 

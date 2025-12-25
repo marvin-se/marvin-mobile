@@ -28,8 +28,12 @@ export const productService = {
         return response.data
     },
 
-    updateProductStatus: async (id: number, status: string): Promise<Product> => {
-        const response = await apiClient.put<Product>(`/listings/${id}/mark-sold`, { status })
+    updateProductStatus: async (id: number, status: string, conversationId?: number): Promise<Product> => {
+        const body: any = { status };
+        if (conversationId) {
+            body.conversationId = conversationId;
+        }
+        const response = await apiClient.put<Product>(`/listings/${id}/mark-sold`, body)
         return response.data
     },
 
@@ -71,6 +75,12 @@ export const productService = {
     getProductImages: async (adId: number): Promise<AttachImagesResponse> => {
         const response = await apiClient.get<AttachImagesResponse>(`/listings/${adId}/images`)
         return response.data
+    },
+
+    deleteImage: async (adId: number, imageKey: string): Promise<void> => {
+        await apiClient.delete(`/listings/${adId}/images`, {
+            params: { imageKey }
+        })
     },
 
     getSalesHistory: async (): Promise<any[]> => {
