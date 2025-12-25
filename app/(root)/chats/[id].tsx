@@ -35,10 +35,13 @@ const Chats = () => {
     // 2. Fetch Initial History
     useEffect(() => {
         const fetchConversation = async () => {
-            if (!otherUserId || !productId) return;
+            if (!otherUserId) return;
             try {
                 setIsLoading(true);
-                const data = await messagesService.getConversation(otherUserId.toString(), productId as string);
+                // Handle case where productId param might be the string "undefined"
+                const cleanProductId = (productId && productId !== 'undefined') ? productId : undefined;
+
+                const data = await messagesService.getConversation(otherUserId.toString(), cleanProductId as string);
                 setConversation(data);
             } catch (error) {
                 console.error("Failed to fetch conversation", error);

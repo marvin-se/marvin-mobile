@@ -7,8 +7,12 @@ export const messagesService = {
         return response.data
     },
 
-    getConversation: async (otherUserId: string | number, productId: string | number): Promise<Conversation> => {
-        const response = await apiClient.get<Conversation>(`/messages/conversations/${otherUserId}/${productId}`)
+    getConversation: async (otherUserId: string | number, productId?: string | number): Promise<Conversation> => {
+        const url = productId
+            ? `/messages/conversations/${otherUserId}/${productId}`
+            : `/messages/conversations/${otherUserId}`
+
+        const response = await apiClient.get<Conversation>(url)
         return response.data
     }
 }
