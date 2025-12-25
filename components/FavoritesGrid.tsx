@@ -1,5 +1,6 @@
 import { useProductStore } from '@/store/useProductStore'
-import React, { useEffect, useState } from 'react'
+import { useFocusEffect } from 'expo-router'
+import React, { useCallback, useState } from 'react'
 import { FlatList, RefreshControl, View } from 'react-native'
 import ProductCard from './ProductCard'
 
@@ -18,13 +19,15 @@ const FavoritesGrid = () => {
     }
 
 
-    useEffect(() => {
-        const loadData = async () => {
-            await fetchProducts();
-            await fetchFavoriteProducts();
-        }
-        loadData();
-    }, [])
+    useFocusEffect(
+        useCallback(() => {
+            const loadData = async () => {
+                await fetchProducts();
+                await fetchFavoriteProducts();
+            }
+            loadData();
+        }, [])
+    )
 
     return (
         <View className='px-5 flex-1 my-8'>
