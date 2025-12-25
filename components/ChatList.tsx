@@ -15,15 +15,21 @@ const ChatList = ({ conversations }: ChatListProps) => {
     const params = useLocalSearchParams<{ query?: string }>();
 
     const filteredChats = useMemo(() => {
-        if (!params.query || params.query.trim() === '') {
-            return conversations;
+        let chats = conversations;
+
+        // 1. Filter out empty conversations (no lastMessage)
+        chats = chats.filter(chat => chat.lastMessage !== null && chat.lastMessage !== undefined);
+
+        // 2. Filter by search query if present
+        if (params.query && params.query.trim() !== '') {
+            const searchQuery = params.query.toLowerCase();
+            chats = chats.filter(chat =>
+                chat.username.toLowerCase().includes(searchQuery) ||
+                chat.lastMessage?.content.toLowerCase().includes(searchQuery)
+            );
         }
 
-        const searchQuery = params.query.toLowerCase();
-        return conversations.filter(chat =>
-            chat.username.toLowerCase().includes(searchQuery) ||
-            chat.lastMessage?.content.toLowerCase().includes(searchQuery)
-        );
+        return chats;
     }, [params.query, conversations]);
 
     return (
