@@ -6,7 +6,7 @@ import { AntDesign, MaterialIcons } from '@expo/vector-icons'
 import { Image } from 'expo-image'
 import { router, useLocalSearchParams } from 'expo-router'
 import React, { useEffect, useRef, useState } from 'react'
-import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import Toast from 'react-native-toast-message'
 
@@ -30,7 +30,51 @@ const Chats = () => {
 
     const [conversation, setConversation] = useState<Conversation | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [isMarkingSold, setIsMarkingSold] = useState(false);
     const [messageText, setMessageText] = useState('');
+
+    // Handle Mark as Sold
+    const handleMarkAsSold = async () => {
+        const product = conversation?.product;
+        if (!product) return;
+
+        Alert.alert(
+            "Mark as Sold",
+            "Are you sure you want to mark this item as sold? This action cannot be undone.",
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Mark as Sold",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            setIsMarkingSold(true);
+                            await productService.updateProductStatus(product.id, 'SOLD', conversation?.id);
+
+                            // Update local state
+                            setConversation(prev => {
+                                if (!prev || !prev.product) return prev;
+                                return {
+                                    ...prev,
+                                    product: {
+                                        ...prev.product,
+                                        status: 'SOLD'
+                                    }
+                                };
+                            });
+
+                            Toast.show({ type: 'success', text1: 'Success', text2: 'Item marked as sold' });
+                        } catch (error) {
+                            console.error("Failed to mark as sold", error);
+                            Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to mark item as sold' });
+                        } finally {
+                            setIsMarkingSold(false);
+                        }
+                    }
+                }
+            ]
+        );
+    };
 
     // Ref for scroll to bottom
     const scrollViewRef = useRef<ScrollView>(null);
@@ -225,9 +269,11 @@ const Chats = () => {
                                 contentFit='cover'
                             />
                         ) : (
-                            <View className="w-12 h-12 bg-gray-200 rounded-lg items-center justify-center">
-                                <MaterialIcons name="image" size={24} color="gray" />
-                            </View>
+                            conversation.product.status !== 'SOLD' && (
+                                <View className="w-12 h-12 bg-gray-200 rounded-lg items-center justify-center">
+                                    <MaterialIcons name="image" size={24} color="gray" />
+                                </View>
+                            )
                         )}
                         <View className="flex-1">
                             <Text className="text-textPrimary font-semibold" numberOfLines={1}>
@@ -240,6 +286,20 @@ const Chats = () => {
                                 )}
                             </Text>
                         </View>
+
+                        {conversation.product.status !== 'SOLD' && conversation.product.sellerId === user?.id && (
+                            <TouchableOpacity
+                                onPress={handleMarkAsSold}
+                                disabled={isMarkingSold}
+                                className={`px-3 py-2 rounded-lg border border-gray-200 ${isMarkingSold ? 'bg-gray-100' : 'bg-gray-200'}`}
+                            >
+                                {isMarkingSold ? (
+                                    <ActivityIndicator size="small" color="#6B7280" />
+                                ) : (
+                                    <Text className="text-textSecondary font-bold text-xs">Mark as sold</Text>
+                                )}
+                            </TouchableOpacity>
+                        )}
                     </View>
                 )}
 
