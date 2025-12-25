@@ -185,7 +185,17 @@ const Chats = () => {
                 {/* HEADER */}
                 <View className='px-5 border-b border-b-borderPrimary pb-4 mb-2'>
                     <View className="flex flex-row items-center justify-center mt-5 relative">
-                        <View className='flex-row items-center gap-4'>
+                        <TouchableOpacity 
+                            className='flex-row items-center gap-4'
+                            onPress={() => router.push({
+                                pathname: `/profile/[userId]`,
+                                params: {
+                                    userId: String(otherUserId),
+                                    name: conversation?.username || '',
+                                }
+                            })}
+                            activeOpacity={0.7}
+                        >
                             <Image
                                 source={{ uri: userAvatar }}
                                 style={{ width: 48, height: 48, borderRadius: 9999 }}
@@ -194,7 +204,7 @@ const Chats = () => {
                             <Text className='text-textPrimary font-bold text-lg' numberOfLines={1}>
                                 {conversation?.username || "User"}
                             </Text>
-                        </View>
+                        </TouchableOpacity>
 
                         <TouchableOpacity className='absolute left-0' onPress={() => router.back()} activeOpacity={0.5}>
                             <MaterialIcons name="arrow-back" size={32} color="black" />
