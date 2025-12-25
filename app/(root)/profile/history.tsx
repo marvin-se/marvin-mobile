@@ -1,94 +1,114 @@
-import { useState } from "react";
-import { View, Text, TouchableOpacity, ScrollView } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
-import { MaterialIcons } from "@expo/vector-icons";
-import TabSelector from "@/components/profile/TabSelector";
+import { productService } from "@/api/services/product";
 import HistoryItem from "@/components/profile/HistoryItem";
+import TabSelector from "@/components/profile/TabSelector";
+import { MaterialIcons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
+import { useRouter } from "expo-router";
+import { useCallback, useState } from "react";
+import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+interface HistoryItemData {
+    id: string;
+    title: string;
+    price: number;
+    image: string;
+    otherUserName: string;
+    date: string;
+}
 
 const History = () => {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState(0);
+    const [soldItems, setSoldItems] = useState<HistoryItemData[]>([]);
+    const [purchasedItems, setPurchasedItems] = useState<HistoryItemData[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    const soldItems = [
-        {
-            id: '1',
-            title: 'Wireless Headphones',
-            price: 120,
-            image: 'https://picsum.photos/id/367/300/400',
-            buyer: 'Sarah Johnson',
-            date: '2025-12-10T14:30:00',
-        },
-        {
-            id: '2',
-            title: 'Winter Jacket',
-            price: 95,
-            image: 'https://picsum.photos/id/835/300/400',
-            buyer: 'Michael Chen',
-            date: '2025-12-08T10:15:00',
-        },
-        {
-            id: '3',
-            title: 'iPhone 13 Pro',
-            price: 650,
-            image: 'https://picsum.photos/id/160/300/400',
-            buyer: 'Emma Davis',
-            date: '2025-12-05T16:45:00',
-        },
-        {
-            id: '4',
-            title: 'Study Lamp',
-            price: 25,
-            image: 'https://picsum.photos/id/225/300/400',
-            buyer: 'Alex Martinez',
-            date: '2025-12-03T09:20:00',
-        },
-    ];
+    const fetchHistory = useCallback(async () => {
+        setIsLoading(true);
+        setError(null);
 
-    const purchasedItems = [
-        {
-            id: '5',
-            title: 'Calculus Textbook',
-            price: 85,
-            image: 'https://picsum.photos/id/24/300/400',
-            seller: 'Jessica Brown',
-            date: '2025-12-12T11:00:00',
-        },
-        {
-            id: '6',
-            title: 'Gaming Laptop',
-            price: 850,
-            image: 'https://picsum.photos/id/0/300/400',
-            seller: 'David Kim',
-            date: '2025-12-09T15:30:00',
-        },
-        {
-            id: '7',
-            title: 'Desk Chair',
-            price: 65,
-            image: 'https://picsum.photos/id/431/300/400',
-            seller: 'Rachel Green',
-            date: '2025-12-07T13:45:00',
-        },
-        {
-            id: '8',
-            title: 'Mini Fridge',
-            price: 80,
-            image: 'https://picsum.photos/id/452/300/400',
-            seller: 'Tom Wilson',
-            date: '2025-12-04T10:00:00',
-        },
-        {
-            id: '9',
-            title: 'Mountain Bike',
-            price: 280,
-            image: 'https://picsum.photos/id/146/300/400',
-            seller: 'Anna Scott',
-            date: '2025-12-01T12:30:00',
-        },
-    ];
+        try {
+            const [salesResponse, purchasesResponse] = await Promise.all([
+                productService.getSalesHistory(),
+                productService.getPurchasesHistory(),
+            ]);
+
+            // API response'dan transactions array'ini al
+            const salesData = salesResponse?.transactions || [];
+            const purchasesData = purchasesResponse?.transactions || [];
+
+            // Sales: Satılan ürünler - buyer bilgisini göster
+            const mappedSoldItems: HistoryItemData[] = salesData.map((item: any) => ({
+                id: String(item.id),
+                title: item.product?.title || 'Unknown Item',
+                price: item.product?.price || 0,
+                image: item.product?.images?.[0] || 'https://picsum.photos/300/400',
+                otherUserName: item.buyer?.fullName || 'Unknown Buyer',
+                date: item.createdAt || new Date().toISOString(),
+            }));
+
+            // Purchases: Satın alınan ürünler - seller bilgisini göster
+            const mappedPurchasedItems: HistoryItemData[] = purchasesData.map((item: any) => ({
+                id: String(item.id),
+                title: item.product?.title || 'Unknown Item',
+                price: item.product?.price || 0,
+                image: item.product?.images?.[0] || 'https://picsum.photos/300/400',
+                otherUserName: item.seller?.fullName || 'Unknown Seller',
+                date: item.createdAt || new Date().toISOString(),
+            }));
+
+            setSoldItems(mappedSoldItems);
+            setPurchasedItems(mappedPurchasedItems);
+        } catch (err: any) {
+            const errorMessage = typeof err === 'string'
+                ? err
+                : err?.message || "Failed to load history";
+            setError(errorMessage);
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    useFocusEffect(
+        useCallback(() => {
+            fetchHistory();
+        }, [fetchHistory])
+    );
 
     const displayItems = activeTab === 0 ? soldItems : purchasedItems;
+
+    if (isLoading) {
+        return (
+            <SafeAreaView className="bg-background h-full">
+                <View className="flex-1 items-center justify-center">
+                    <ActivityIndicator size="large" color="#72C69B" />
+                    <Text className="text-textSecondary mt-4">Loading history...</Text>
+                </View>
+            </SafeAreaView>
+        );
+    }
+
+    if (error) {
+        return (
+            <SafeAreaView className="bg-background h-full">
+                <View className="flex-1 items-center justify-center px-5">
+                    <MaterialIcons name="error-outline" size={64} color="#CDD5E0" />
+                    <Text className="text-xl font-semibold text-textSecondary mt-4">
+                        {error}
+                    </Text>
+                    <TouchableOpacity
+                        onPress={fetchHistory}
+                        className="bg-primary px-6 py-3 rounded-full mt-6"
+                        activeOpacity={0.7}
+                    >
+                        <Text className="text-white font-semibold">Try Again</Text>
+                    </TouchableOpacity>
+                </View>
+            </SafeAreaView>
+        );
+    }
 
     return (
         <SafeAreaView className="bg-background h-full">
@@ -136,7 +156,7 @@ const History = () => {
                             title={item.title}
                             price={item.price}
                             image={item.image}
-                            otherUser={activeTab === 0 ? `Sold to ${item.buyer}` : `Bought from ${item.seller}`}
+                            otherUser={activeTab === 0 ? `Sold to ${item.otherUserName}` : `Bought from ${item.otherUserName}`}
                             date={item.date}
                             showBorder={index !== displayItems.length - 1}
                         />

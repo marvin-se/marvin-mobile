@@ -7,6 +7,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
     ActivityIndicator,
+    Alert,
     Animated,
     Dimensions,
     ScrollView,
@@ -22,8 +23,9 @@ const { width } = Dimensions.get("window");
 const Details = () => {
     const { id } = useLocalSearchParams();
     const router = useRouter();
-    const { products, favoriteProducts, addFavoriteProduct, removeFavoriteProduct, imageUrlCache, cacheImageUrls } = useProductStore();
+    const { products, favoriteProducts, addFavoriteProduct, removeFavoriteProduct, imageUrlCache, cacheImageUrls, deleteProduct } = useProductStore();
     const { user } = useAuthStore();
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const product = products.find((p) => p.id === Number(id));
     const isFavorite = favoriteProducts.some(p => p.id === Number(id));
@@ -133,6 +135,44 @@ const Details = () => {
     const handleContactSeller = () => {
         if (isOwnProduct) return;
         router.push(`/chats/${product?.sellerId}?productId=${product?.id}`);
+    };
+
+    const handleEdit = () => {
+        router.push(`/upload?editId=${product?.id}`);
+    };
+
+    const handleDelete = () => {
+        Alert.alert(
+            "Delete Listing",
+            "Are you sure you want to delete this listing?",
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Delete",
+                    style: "destructive",
+                    onPress: async () => {
+                        setIsDeleting(true);
+                        try {
+                            await deleteProduct(product!.id);
+                            Toast.show({
+                                type: "success",
+                                text1: "Success",
+                                text2: "Listing deleted successfully",
+                            });
+                            router.back();
+                        } catch (err: any) {
+                            Toast.show({
+                                type: "error",
+                                text1: "Error",
+                                text2: err.message || "Could not delete listing",
+                            });
+                        } finally {
+                            setIsDeleting(false);
+                        }
+                    },
+                },
+            ]
+        );
     };
 
     // Loading state - full screen
@@ -288,16 +328,48 @@ const Details = () => {
             </ScrollView>
 
             <View className="absolute bottom-0 left-0 right-0 bg-white border-t border-borderPrimary px-5 py-8">
-                <TouchableOpacity
-                    onPress={handleContactSeller}
-                    className={`py-4 rounded-xl ${isOwnProduct ? "bg-gray-300" : "bg-primary"}`}
-                    activeOpacity={isOwnProduct ? 1 : 0.7}
-                    disabled={isOwnProduct}
-                >
-                    <Text className={`text-center font-semibold text-base ${isOwnProduct ? "text-gray-500" : "text-white"}`}>
-                        {isOwnProduct ? "Your Listing" : "Contact Seller"}
-                    </Text>
-                </TouchableOpacity>
+                {isOwnProduct ? (
+                    <View className="flex-row gap-3">
+                        <TouchableOpacity
+                            onPress={handleEdit}
+                            className="flex-1 py-4 rounded-xl bg-primary flex-row items-center justify-center gap-2"
+                            activeOpacity={0.7}
+                            disabled={isDeleting}
+                        >
+                            <MaterialIcons name="edit" size={20} color="white" />
+                            <Text className="text-center font-semibold text-base text-white">
+                                Edit
+                            </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            onPress={handleDelete}
+                            className="flex-1 py-4 rounded-xl bg-red-500 flex-row items-center justify-center gap-2"
+                            activeOpacity={0.7}
+                            disabled={isDeleting}
+                        >
+                            {isDeleting ? (
+                                <ActivityIndicator size="small" color="white" />
+                            ) : (
+                                <>
+                                    <MaterialIcons name="delete" size={20} color="white" />
+                                    <Text className="text-center font-semibold text-base text-white">
+                                        Delete
+                                    </Text>
+                                </>
+                            )}
+                        </TouchableOpacity>
+                    </View>
+                ) : (
+                    <TouchableOpacity
+                        onPress={handleContactSeller}
+                        className="py-4 rounded-xl bg-primary"
+                        activeOpacity={0.7}
+                    >
+                        <Text className="text-center font-semibold text-base text-white">
+                            Contact Seller
+                        </Text>
+                    </TouchableOpacity>
+                )}
             </View>
         </SafeAreaView>
     );

@@ -86,20 +86,36 @@ const Upload = () => {
     setIsLoadingProduct(true);
     try {
       const cachedProduct = products.find(p => p.id === productId);
+      const product = cachedProduct || await productService.getProductById(productId);
 
-      if (cachedProduct) {
-        setTitle(cachedProduct.title || "");
-        setDescription(cachedProduct.description || "");
-        setCategory(cachedProduct.category || null);
-        setPrice(cachedProduct.price?.toString() || "");
-        setImages(cachedProduct.images || []);
+      setTitle(product.title || "");
+      setDescription(product.description || "");
+      setCategory(product.category || null);
+      setPrice(product.price?.toString() || "");
+
+      // S3 key'lerini signed URL'lere çevir
+      if (product.images && product.images.length > 0) {
+        const firstImage = product.images[0];
+        if (firstImage.startsWith('products/')) {
+          // S3 key'leri - signed URL al
+          try {
+            const response = await productService.getProductImages(productId);
+            if (response.images && response.images.length > 0) {
+              const signedUrls = response.images.map(img => img.url);
+              setImages(signedUrls);
+            } else {
+              setImages([]);
+            }
+          } catch (imgError) {
+            console.error("Failed to load signed image URLs", imgError);
+            setImages([]);
+          }
+        } else {
+          // Zaten URL - direkt kullan
+          setImages(product.images);
+        }
       } else {
-        const product = await productService.getProductById(productId);
-        setTitle(product.title || "");
-        setDescription(product.description || "");
-        setCategory(product.category || null);
-        setPrice(product.price?.toString() || "");
-        setImages(product.images || []);
+        setImages([]);
       }
     } catch (error: any) {
       Toast.show({
@@ -324,7 +340,7 @@ const Upload = () => {
                 placeholder="e.g, Introduction to Psychology Textbook"
                 placeholderTextColor="#7F8C8D"
                 autoCapitalize='none'
-                className='border-[1.5px] border-borderPrimary p-4 bg-background rounded-lg text-lg font-medium'
+                className='border-[1.5px] border-borderPrimary px-4 pb-4 pt-2 bg-background rounded-lg text-lg font-medium'
               />
             </View>
 

@@ -1,20 +1,20 @@
-import { useState, useCallback } from "react";
-import { View, Text, TouchableOpacity, FlatList, Alert, ActivityIndicator, Modal } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
-import { useFocusEffect } from "@react-navigation/native";
-import { MaterialIcons } from "@expo/vector-icons";
-import TabSelector from "@/components/profile/TabSelector";
+import { productService } from "@/api/services/product";
 import MyListingCard from "@/components/profile/MyListingCard";
+import TabSelector from "@/components/profile/TabSelector";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useProductStore } from "@/store/useProductStore";
-import { productService } from "@/api/services/product";
 import { Product } from "@/types/api";
+import { MaterialIcons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
+import { useRouter } from "expo-router";
+import { useCallback, useState } from "react";
+import { ActivityIndicator, Alert, FlatList, Modal, Text, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const MyListings = () => {
     const router = useRouter();
     const { user } = useAuthStore();
-    const { deleteProduct, updateProductStatus } = useProductStore();
+    const { deleteProduct } = useProductStore();
     const [activeTab, setActiveTab] = useState(0);
     const [listings, setListings] = useState<Product[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -52,9 +52,6 @@ const MyListings = () => {
     const displayListings = activeTab === 0 ? activeListings : soldListings;
 
     const handleMenuPress = (id: number) => {
-        const listing = listings.find(l => l.id === id);
-        const isSold = listing?.status === "SOLD";
-
         Alert.alert(
             "Options",
             "Choose an action",
@@ -63,10 +60,6 @@ const MyListings = () => {
                     text: "Edit Listing",
                     onPress: () => router.push(`/upload?editId=${id}`),
                 },
-                ...(!isSold ? [{
-                    text: "Mark as Sold",
-                    onPress: () => handleMarkAsSold(id),
-                }] : []),
                 {
                     text: "Delete Listing",
                     style: "destructive" as const,
@@ -78,25 +71,6 @@ const MyListings = () => {
                 },
             ]
         );
-    };
-
-    const handleMarkAsSold = async (id: number) => {
-        setIsProcessing(true);
-        try {
-            await updateProductStatus(id, "SOLD");
-            setListings(prev => 
-                prev.map(item => 
-                    item.id === id ? { ...item, status: "SOLD" } : item
-                )
-            );
-        } catch (err: any) {
-            const errorMessage = typeof err === 'string' 
-                ? err 
-                : err?.message || err?.error || "Could not update listing";
-            Alert.alert("Error", errorMessage);
-        } finally {
-            setIsProcessing(false);
-        }
     };
 
     const handleDelete = (id: number) => {
@@ -220,7 +194,7 @@ const MyListings = () => {
                                 id={String(item.id)}
                                 title={item.title}
                                 price={item.price}
-                                image={item.images?.[0] || "https://picsum.photos/300/400"}
+                                images={item.images}
                                 isSold={item.status === "SOLD"}
                                 onMenuPress={() => handleMenuPress(item.id)}
                             />

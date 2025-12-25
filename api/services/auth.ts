@@ -1,13 +1,13 @@
 import { apiClient } from "../config";
 
 import {
+    ForgotPasswordRequest,
+    ResetPasswordRequest,
     SignInRequest,
     SignInResponse,
     SignUpRequest,
-    ForgotPasswordRequest,
-    ResetPasswordRequest,
-    VerifyRequest,
-    User
+    User,
+    VerifyRequest
 } from "@/types/auth";
 
 export const authService = {
@@ -61,5 +61,10 @@ export const authService = {
 
     deleteAccount: async (): Promise<void> => {
         await apiClient.delete("/user/me");
+    },
+
+    getUserById: async (userId: number): Promise<User> => {
+        const response = await apiClient.get<User>(`/user/${userId}`);
+        return response.data;
     },
 };

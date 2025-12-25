@@ -72,4 +72,14 @@ export const productService = {
         const response = await apiClient.get<AttachImagesResponse>(`/listings/${adId}/images`)
         return response.data
     },
+
+    getSalesHistory: async (): Promise<any[]> => {
+        const response = await apiClient.get<any[]>("/user/sales")
+        return response.data
+    },
+
+    getPurchasesHistory: async (): Promise<any[]> => {
+        const response = await apiClient.get<any[]>("/user/purchases")
+        return response.data
+    },
 }
