@@ -120,7 +120,7 @@ const ProductCard = ({ id, title, price, images, sellerId, isFavorite, visitCoun
                     </View>
                 </View>
                 <Text className="text-lg font-bold text-primary">
-                    ${price}
+                    ₺{price}
                 </Text>
             </View>
         </TouchableOpacity >

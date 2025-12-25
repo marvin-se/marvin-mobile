@@ -294,7 +294,7 @@ const Details = () => {
                             </Text>
                         </View>
                         <Text className="text-3xl font-bold text-primary">
-                            ${product.price}
+                            ₺{product.price}
                         </Text>
                     </View>
 

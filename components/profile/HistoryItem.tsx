@@ -38,7 +38,7 @@ const HistoryItem: React.FC<HistoryItemProps> = ({
                     {title}
                 </Text>
                 <Text className='text-lg font-bold text-primary mt-1'>
-                    ${price}
+                    ₺{price}
                 </Text>
                 <Text className='text-sm text-textSecondary mt-1' numberOfLines={1}>
                     {otherUser}

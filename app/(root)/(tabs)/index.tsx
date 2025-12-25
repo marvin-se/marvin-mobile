@@ -33,7 +33,6 @@ export default function Index() {
         <View className="flex flex-row items-center justify-between mt-5">
           <Text className="text-2xl font-bold text-textPrimary">Campus Trade</Text>
           <View className="flex flex-row items-center gap-4">
-            <AntDesign name="bell" size={24} color="#2C3E50" />
             <TouchableOpacity
               onPress={() => router.push("/profile")}
               className="bg-gray-200 p-2 rounded-full"

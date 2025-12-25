@@ -102,7 +102,7 @@ const MyListingCard = ({ id, title, price, images, isSold = false, onMenuPress, 
                 </Text>
                 <Text className={`text-lg font-bold mb-1 ${isSold ? 'text-textSecondary' : 'text-primary'
                     }`}>
-                    ${price}
+                    ₺{price}
                 </Text>
             </View>
         </TouchableOpacity>
