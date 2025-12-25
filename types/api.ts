@@ -31,3 +31,25 @@ export interface FavouritesResponse {
     userId: number;
     productId: number;
 }
+
+export interface Message {
+    id: number;
+    senderId: number;
+    content: string;
+    sentAt: string;
+    read: boolean;
+}
+
+export interface Conversation {
+    id: number;
+    username: string;
+    product: Product | null;
+    userId: number;
+    lastMessage: Message | null;
+    messages: Message[] | null;
+}
+
+export interface ConversationListResponse {
+    conversations: Conversation[];
+    numberOfConversations: number;
+}

@@ -4,23 +4,27 @@ import { router, useLocalSearchParams } from 'expo-router'
 import React, { useMemo } from 'react'
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native'
 
-import mockMessages from '@/data/mockMessages'
+import { Conversation } from '@/types/api'
 import { formatTimeAgo } from '@/utils/formatTime'
 
-const ChatList = () => {
+interface ChatListProps {
+    conversations: Conversation[];
+}
+
+const ChatList = ({ conversations }: ChatListProps) => {
     const params = useLocalSearchParams<{ query?: string }>();
 
     const filteredChats = useMemo(() => {
         if (!params.query || params.query.trim() === '') {
-            return mockMessages;
+            return conversations;
         }
 
         const searchQuery = params.query.toLowerCase();
-        return mockMessages.filter(chat =>
-            chat.userName.toLowerCase().includes(searchQuery) ||
-            chat.lastMessage.toLowerCase().includes(searchQuery)
+        return conversations.filter(chat =>
+            chat.username.toLowerCase().includes(searchQuery) ||
+            chat.lastMessage?.content.toLowerCase().includes(searchQuery)
         );
-    }, [params.query]);
+    }, [params.query, conversations]);
 
     return (
         <View className='px-5 flex-1'>
@@ -34,27 +38,31 @@ const ChatList = () => {
                     contentContainerStyle={{ paddingBottom: 48 }}
                 >
                     {filteredChats.map((chat, index) => (
-                        <TouchableOpacity key={index} onPress={() => router.navigate(`/chats/${chat.id}`)} activeOpacity={0.3}>
+                        <TouchableOpacity key={chat.id} onPress={() => router.navigate(`/chats/${chat.id}`)} activeOpacity={0.3}>
                             <View className={`py-5 flex-row justify-between items-center gap-3 ${index !== filteredChats.length - 1 ? 'border-b border-b-borderPrimary' : ''}`}>
                                 <View className='flex-row items-center gap-4 flex-1'>
                                     <Image
-                                        source={{ uri: chat.userAvatar }}
+                                        source={{ uri: `https://ui-avatars.com/api/?name=${chat.username}&background=random` }}
                                         style={{ width: 48, height: 48, borderRadius: 9999 }}
                                         contentFit='cover'
                                     />
                                     <View className='flex-1'>
                                         <Text className='text-textPrimary font-bold text-lg' numberOfLines={1}>
-                                            {chat.userName}
+                                            {chat.username}
                                         </Text>
-                                        <Text className={`${chat.unread > 0 ? 'font-bold text-textPrimary' : 'text-textSecondary'}`} numberOfLines={1}>
-                                            {chat.lastMessage}
+                                        <Text className={`${chat.lastMessage && !chat.lastMessage.read ? 'font-bold text-textPrimary' : 'text-textSecondary'}`} numberOfLines={1}>
+                                            {chat.lastMessage?.content || 'No messages yet'}
                                         </Text>
                                     </View>
                                 </View>
 
                                 <View className='items-end'>
-                                    <Text className='text-textSecondary text-sm'>{formatTimeAgo(chat.timestamp)}</Text>
-                                    {chat.unread > 0 && (<Entypo name="dot-single" size={32} color="#72c69b" className='-mr-3' />)}
+                                    <Text className='text-textSecondary text-sm'>
+                                        {chat.lastMessage ? formatTimeAgo(chat.lastMessage.sentAt) : ''}
+                                    </Text>
+                                    {chat.lastMessage && !chat.lastMessage.read && (
+                                        <Entypo name="dot-single" size={32} color="#72c69b" className='-mr-3' />
+                                    )}
                                 </View>
                             </View>
                         </TouchableOpacity>
