@@ -11,6 +11,7 @@ import Toast from 'react-native-toast-message'
 
 // Import the hook
 import { useChatWebSocket } from '@/hooks/useChatWebSocket'
+import { getAvatarUrl } from '@/utils/avatar'
 import { getToken } from '@/utils/storage'
 
 const Chats = () => {
@@ -117,9 +118,7 @@ const Chats = () => {
         )
     }
 
-    const userAvatar = conversation?.username
-        ? `https://ui-avatars.com/api/?name=${conversation.username}&background=random`
-        : "https://i.pravatar.cc/150?img=12";
+    const userAvatar = getAvatarUrl(conversation?.username);
 
     return (
         <SafeAreaView className='bg-background h-full'>

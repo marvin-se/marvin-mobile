@@ -14,7 +14,13 @@ import { ActivityIndicator, FlatList, Text, TouchableOpacity, View } from "react
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const UserProfile = () => {
-    const { userId } = useLocalSearchParams<{ userId: string }>();
+    const { userId, name, email, university, avatar } = useLocalSearchParams<{ 
+        userId: string;
+        name?: string;
+        email?: string;
+        university?: string;
+        avatar?: string;
+    }>();
     const router = useRouter();
     const { imageUrlCache, cacheImageUrls } = useProductStore();
 
@@ -31,12 +37,40 @@ const UserProfile = () => {
         setError(null);
 
         try {
-            const [userData, userListings] = await Promise.all([
-                authService.getUserById(Number(userId)),
-                productService.getUserListings(Number(userId)),
-            ]);
+            // Try to fetch user data from API
+            let userData: User | null = null;
+            try {
+                userData = await authService.getUserById(Number(userId));
+            } catch (userError) {
+                console.log("User API failed, using params:", userError);
+                // If API fails, use data from query params
+                if (name) {
+                    userData = {
+                        id: Number(userId),
+                        fullName: name,
+                        email: email || '',
+                        universityName: university || '',
+                        profilePicUrl: avatar || '',
+                        phoneNumber: '',
+                        universityId: 0,
+                        createdAt: '',
+                        isActive: true,
+                    };
+                }
+            }
 
-            setUser(userData);
+            // Fetch user listings
+            const userListings = await productService.getUserListings(Number(userId));
+
+            if (userData) {
+                setUser(userData);
+            } else if (!name) {
+                // No user data from API and no params - show error
+                setError("User not found");
+                setIsLoading(false);
+                return;
+            }
+            
             setListings(userListings);
 
             // Preload images for listings
@@ -57,14 +91,23 @@ const UserProfile = () => {
                 }
             }
         } catch (err: any) {
-            const errorMessage = typeof err === 'string'
-                ? err
-                : err?.message || "Failed to load profile";
+            let errorMessage = "Failed to load profile";
+            
+            if (typeof err === 'string') {
+                errorMessage = err;
+            } else if (err?.response?.data?.message) {
+                errorMessage = err.response.data.message;
+            } else if (err?.message && typeof err.message === 'string') {
+                errorMessage = err.message;
+            } else if (err?.error && typeof err.error === 'string') {
+                errorMessage = err.error;
+            }
+            
             setError(errorMessage);
         } finally {
             setIsLoading(false);
         }
-    }, [userId]);
+    }, [userId, name, email, university, avatar]);
 
     useEffect(() => {
         fetchUserData();
@@ -111,12 +154,25 @@ const UserProfile = () => {
 
     return (
         <SafeAreaView className="bg-background h-full">
+            {/* Header with back button */}
+            <View className="px-5 border-b border-b-borderPrimary pb-4">
+                <View className="flex flex-row items-center justify-center mt-5 relative">
+                    <Text className="text-2xl font-bold text-textPrimary">Profile</Text>
+                    <TouchableOpacity
+                        className="absolute left-0"
+                        onPress={() => router.back()}
+                        activeOpacity={0.5}
+                    >
+                        <MaterialIcons name="arrow-back" size={28} color="#2C3E50" />
+                    </TouchableOpacity>
+                </View>
+            </View>
+
             <ProfileHeader
                 name={user.fullName}
-                email={user.email}
-                avatar={user.profilePicUrl || "https://i.pravatar.cc/150"}
+                avatar={user.profilePicUrl}
                 university={user.universityName}
-                showBackButton
+                hideEmail
             />
 
             <View className="flex-row gap-3 px-5 mt-6">
@@ -148,19 +204,14 @@ const UserProfile = () => {
                         <FlatList
                             data={displayListings}
                             renderItem={({ item }) => (
-                                <TouchableOpacity
-                                    onPress={() => handleListingPress(item.id)}
-                                    activeOpacity={0.7}
-                                >
-                                    <MyListingCard
-                                        id={String(item.id)}
-                                        title={item.title}
-                                        price={item.price}
-                                        images={item.images}
-                                        isSold={item.status === "SOLD"}
-                                        hideMenu
-                                    />
-                                </TouchableOpacity>
+                                <MyListingCard
+                                    id={String(item.id)}
+                                    title={item.title}
+                                    price={item.price}
+                                    images={item.images}
+                                    isSold={item.status === "SOLD"}
+                                    hideMenu
+                                />
                             )}
                             keyExtractor={(item) => String(item.id)}
                             numColumns={2}

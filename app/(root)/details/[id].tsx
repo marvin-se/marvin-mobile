@@ -1,6 +1,9 @@
+import { authService } from "@/api/services/auth";
 import { productService } from "@/api/services/product";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useProductStore } from "@/store/useProductStore";
+import { User } from "@/types/auth";
+import { getAvatarUrl } from "@/utils/avatar";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -36,6 +39,7 @@ const Details = () => {
     const [viewCount, setViewCount] = useState<number | null>(null);
     const [favouriteCount, setFavouriteCount] = useState<number | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [seller, setSeller] = useState<User | null>(null);
     const fadeAnim = useRef(new Animated.Value(1)).current;
 
     const images = product?.images?.length ? product.images : ["https://picsum.photos/400/400"];
@@ -81,6 +85,16 @@ const Details = () => {
                 const updatedProduct = await productService.getProductById(productId);
                 setViewCount(updatedProduct.visitCount ?? 0);
                 setFavouriteCount(updatedProduct.favouriteCount ?? 0);
+
+                // Fetch seller info
+                if (updatedProduct.sellerId) {
+                    try {
+                        const sellerData = await authService.getUserById(updatedProduct.sellerId);
+                        setSeller(sellerData);
+                    } catch (sellerError) {
+                        console.log("Seller fetch failed:", sellerError);
+                    }
+                }
             } catch (error) {
                 console.log("Stats fetch failed:", error);
                 setViewCount(product?.visitCount ?? 0);
@@ -323,6 +337,44 @@ const Details = () => {
                         {product.description}
                     </Text>
                 </View>
+
+                {/* Seller Info Section */}
+                {!isOwnProduct && seller && (
+                    <TouchableOpacity
+                        onPress={() => router.push({
+                            pathname: `/profile/[userId]`,
+                            params: {
+                                userId: String(product.sellerId),
+                                name: seller.fullName || '',
+                                email: seller.email || '',
+                                university: seller.universityName || '',
+                                avatar: seller.profilePicUrl || '',
+                            }
+                        })}
+                        className="bg-white px-5 py-4 mt-2"
+                        activeOpacity={0.7}
+                    >
+                        <Text className="text-base font-semibold text-textPrimary mb-3">
+                            Seller
+                        </Text>
+                        <View className="flex-row items-center">
+                            <Image
+                                source={{ uri: getAvatarUrl(seller.fullName, seller.profilePicUrl) }}
+                                style={{ width: 50, height: 50, borderRadius: 25 }}
+                                contentFit="cover"
+                            />
+                            <View className="flex-1 ml-3">
+                                <Text className="text-base font-semibold text-textPrimary">
+                                    {seller.fullName}
+                                </Text>
+                                <Text className="text-sm text-textSecondary mt-1">
+                                    {seller.universityName}
+                                </Text>
+                            </View>
+                            <MaterialIcons name="chevron-right" size={24} color="#7F8C8D" />
+                        </View>
+                    </TouchableOpacity>
+                )}
 
                 <View className="h-24" />
             </ScrollView>
