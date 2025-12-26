@@ -59,9 +59,9 @@ const MyListingCard = ({ id, title, price, images, isSold = false, onMenuPress, 
 
     return (
         <TouchableOpacity
-            onPress={handleProductPress}
+            onPress={isSold ? undefined : handleProductPress}
             className='w-[48%] mb-4'
-            activeOpacity={0.5}
+            activeOpacity={isSold ? 1 : 0.5}
         >
             <View className='relative'>
                 <Image
