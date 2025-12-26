@@ -2,51 +2,37 @@ import { apiClient } from "../config";
 
 import {
     ForgotPasswordRequest,
+    PresignProfilePictureRequest,
+    PresignProfilePictureResponse,
     ResetPasswordRequest,
+    SaveProfilePictureRequest,
     SignInRequest,
     SignInResponse,
     SignUpRequest,
     User,
-    VerifyRequest
+    VerifyRequest,
+    ViewProfilePictureResponse
 } from "@/types/auth";
 
 export const authService = {
-    // Profile Picture APIs
-    getProfilePicturePresign: async (): Promise<{ uploadUrl: string; key: string }> => {
-        const response = await apiClient.post<{ uploadUrl: string; key: string }>("/user/profile-picture/presign");
-        return response.data;
-    },
-
-    uploadProfilePicture: async (uploadUrl: string, imageUri: string, contentType: string): Promise<void> => {
-        const response = await fetch(imageUri);
-        const blob = await response.blob();
-        const uploadResponse = await fetch(uploadUrl, {
-            method: 'PUT',
-            body: blob,
-            headers: {
-                'Content-Type': contentType,
-            },
-        });
-        if (!uploadResponse.ok) {
-            throw new Error('Failed to upload profile picture');
-        }
-    },
-
-    setProfilePicture: async (key: string): Promise<void> => {
-        await apiClient.put("/user/profile-picture", { key });
-    },
-
-    getMyProfilePicture: async (): Promise<{ url: string }> => {
-        const response = await apiClient.get<{ url: string }>("/user/profile-picture/me");
-        return response.data;
-    },
-
-    getUserProfilePicture: async (userId: number): Promise<{ url: string }> => {
-        const response = await apiClient.get<{ url: string }>(`/user/${userId}/profile-picture`);
-        return response.data;
-    },
     signIn: async (data: SignInRequest): Promise<SignInResponse> => {
         const response = await apiClient.post<SignInResponse>("/auth/login", data);
+        const user = response.data.user;
+        if (user.profilePicUrl && !user.profilePicUrl.startsWith("http")) {
+            try {
+                // If we have a key but not a URL, fetch the signed URL.
+                // Note: For sign-in, we might not be able to call authenticated endpoints immediately 
+                // unless we attach the token. But usually the token is saved after this returns.
+                // Ideally, the backend should return the signed URL in login response.
+                // If we can't fetch it here without setting token first, we might skip.
+                // But let's assume we can or rely on getCurrentUser being called later.
+                // actually, let's just leave signIn alone as getCurrentUser usually runs on app load?
+                // OR, for immediate login experience, we might need it. 
+                // Let's defer to checkAuth/getCurrentUser for now to avoid token race conditions.
+            } catch (e) {
+                // ignore
+            }
+        }
         return response.data;
     },
 
@@ -80,8 +66,19 @@ export const authService = {
     },
 
     getCurrentUser: async (): Promise<User> => {
-        const response = await apiClient.get<User>("/auth/me");
-        return response.data;
+        const response = await apiClient.get<User>("/user/me");
+        const user = response.data;
+        if (user.profilePicUrl && !user.profilePicUrl.startsWith("http")) {
+            try {
+                const picRes = await authService.getProfilePicture();
+                if (picRes.url) {
+                    user.profilePicUrl = picRes.url;
+                }
+            } catch (e) {
+                // ignore
+            }
+        }
+        return user;
     },
 
     updateProfile: async (data: { fullName?: string; phoneNumber?: string }): Promise<User> => {
@@ -99,7 +96,18 @@ export const authService = {
 
     getUserById: async (userId: number): Promise<User> => {
         const response = await apiClient.get<User>(`/user/${userId}`);
-        return response.data;
+        const user = response.data;
+        if (user.profilePicUrl && !user.profilePicUrl.startsWith("http")) {
+            try {
+                const picRes = await authService.getUserProfilePicture(userId);
+                if (picRes.url) {
+                    user.profilePicUrl = picRes.url;
+                }
+            } catch (e) {
+                // ignore
+            }
+        }
+        return user;
     },
 
     blockUser: async (userId: number): Promise<void> => {
@@ -117,6 +125,25 @@ export const authService = {
 
     getUniversities: async (): Promise<{ name: string }[]> => {
         const response = await apiClient.get<{ name: string }[]>("/universities");
+        return response.data;
+    },
+
+    presignProfilePicture: async (data: PresignProfilePictureRequest): Promise<PresignProfilePictureResponse> => {
+        const response = await apiClient.post<PresignProfilePictureResponse>("/user/profile-picture/presign", data);
+        return response.data;
+    },
+
+    saveProfilePicture: async (data: SaveProfilePictureRequest): Promise<void> => {
+        await apiClient.put("/user/profile-picture", data);
+    },
+
+    getProfilePicture: async (): Promise<ViewProfilePictureResponse> => {
+        const response = await apiClient.get<ViewProfilePictureResponse>("/user/profile-picture/me");
+        return response.data;
+    },
+
+    getUserProfilePicture: async (userId: number): Promise<ViewProfilePictureResponse> => {
+        const response = await apiClient.get<ViewProfilePictureResponse>(`/user/${userId}/profile-picture`);
         return response.data;
     },
 };

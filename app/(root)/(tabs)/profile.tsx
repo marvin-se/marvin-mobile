@@ -1,3 +1,4 @@
+import { authService } from "@/api/services/auth";
 import ProfileHeader from "@/components/profile/ProfileHeader";
 import ProfileMenuItem from "@/components/profile/ProfileMenuItem";
 import ProfileSection from "@/components/profile/ProfileSection";
@@ -5,19 +6,38 @@ import StatCard from "@/components/profile/StatCard";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useProductStore } from "@/store/useProductStore";
 import { MaterialIcons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { useEffect } from "react";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useEffect } from "react";
 import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const Profile = () => {
     const router = useRouter();
-    const { user, logout } = useAuthStore();
+    const { user, logout, setUser } = useAuthStore();
     const { products, fetchProducts } = useProductStore();
 
     useEffect(() => {
         fetchProducts();
     }, []);
+
+    useFocusEffect(
+        useCallback(() => {
+            const refreshProfilePic = async () => {
+                if (!user) return;
+                try {
+                    const picRes = await authService.getProfilePicture();
+                    if (picRes.url && picRes.url !== user.profilePicUrl) {
+                        // Update store only if different to avoid potential loops if strict equality check fails?
+                        // Actually, just updating the user object with new URL is fine.
+                        setUser({ ...user, profilePicUrl: picRes.url });
+                    }
+                } catch (error) {
+                    console.error("Failed to refresh profile picture:", error);
+                }
+            };
+            refreshProfilePic();
+        }, [user?.id]) // Depend on user ID so we don't loop but do refresh if user changes logic
+    );
 
     const userStats = {
         activeListings: products.filter(p => p.sellerId === user?.id && p.status !== "SOLD").length,

@@ -11,9 +11,9 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import Toast from 'react-native-toast-message'
 
 // Import the hook
+import Avatar from '@/components/Avatar'
 import { useChatWebSocket } from '@/hooks/useChatWebSocket'
 import { useProductStore } from '@/store/useProductStore'
-import { getAvatarUrl } from '@/utils/avatar'
 import { getToken } from '@/utils/storage'
 
 const Chats = () => {
@@ -203,7 +203,7 @@ const Chats = () => {
         )
     }
 
-    const userAvatar = getAvatarUrl(conversation?.username);
+
 
     // Determine the product image to show
     let productImageSource = null;
@@ -240,10 +240,10 @@ const Chats = () => {
                             })}
                             activeOpacity={0.7}
                         >
-                            <Image
-                                source={{ uri: userAvatar }}
-                                style={{ width: 48, height: 48, borderRadius: 9999 }}
-                                contentFit='cover'
+                            <Avatar
+                                uri={undefined}
+                                name={conversation?.username || "User"}
+                                size={48}
                             />
                             <Text className='text-textPrimary font-bold text-lg' numberOfLines={1}>
                                 {conversation?.username || "User"}

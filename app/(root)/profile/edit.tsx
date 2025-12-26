@@ -1,10 +1,10 @@
 import { authService } from "@/api/services/auth";
+import { productService } from "@/api/services/product";
 import Button from "@/components/auth/Button";
 import InputField from "@/components/auth/InputField";
+import Avatar from "@/components/Avatar";
 import { useAuthStore } from "@/store/useAuthStore";
-import { getAvatarUrl } from "@/utils/avatar";
 import { MaterialIcons } from "@expo/vector-icons";
-import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
@@ -27,38 +27,39 @@ const EditProfile = () => {
     const [phone, setPhone] = useState(user?.phoneNumber || "");
 
     const [isLoading, setIsLoading] = useState(false);
-    const [avatar, setAvatar] = useState(user?.profilePicUrl || "");
+    // Use user's profile pic or null initially.
+    // If it's a URL, it's from backend. If it's a file path, it's a new selection.
+    const [avatar, setAvatar] = useState<string | undefined>(user?.profilePicUrl);
 
-    const email = user?.email || "";
-    const university = user?.universityName || "";
-    const handlePickAvatar = async () => {
+    // Update local state when user changes to ensure sync if they come back or whatever,
+    // actually we just want to initialize it.
+
+    // Handler for picking image
+    const handlePickImage = async () => {
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (status !== 'granted') {
             Toast.show({ type: 'error', text1: 'Permission to access gallery is required!' });
             return;
         }
+
         const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            mediaTypes: ["images"],
             allowsEditing: true,
             aspect: [1, 1],
-            quality: 0.7,
+            quality: 0.5,
         });
-        if (!result.canceled && result.assets && result.assets.length > 0) {
-            const imageUri = result.assets[0].uri;
-            try {
-                const presign = await authService.getProfilePicturePresign();
-                await authService.uploadProfilePicture(presign.uploadUrl, imageUri, 'image/jpeg');
-                await authService.setProfilePicture(presign.key);
-                const { url } = await authService.getMyProfilePicture();
-                setAvatar(url);
-                Toast.show({ type: 'success', text1: 'Profile picture updated!' });
-            } catch (error: any) {
-                Toast.show({ type: 'error', text1: 'Failed to update profile picture', text2: error.message });
-            }
+
+        if (!result.canceled) {
+            setAvatar(result.assets[0].uri);
         }
     };
 
+    const email = user?.email || "";
+    const university = user?.universityName || "";
+
     const handleSave = async () => {
+        if (!user) return;
+
         if (!fullName.trim()) {
             Toast.show({
                 type: "error",
@@ -71,12 +72,37 @@ const EditProfile = () => {
         setIsLoading(true);
 
         try {
-            const updatedUser = await authService.updateProfile({ 
-                fullName, 
-                phoneNumber: phone 
+            // 1. Handle Profile Picture Upload if changed (local file URI)
+            if (avatar && avatar !== user.profilePicUrl && !avatar.startsWith("http")) {
+                const fileName = avatar.split('/').pop() || `profile_${Date.now()}.jpg`;
+                const contentType = 'image/jpeg'; // Assuming jpeg for now from picker
+
+                // A. Presign
+                const presignRes = await authService.presignProfilePicture({
+                    fileName,
+                    contentType
+                });
+
+                // B. Upload to S3
+                await productService.uploadImageToS3(presignRes.uploadUrl, avatar, contentType);
+
+                // C. Save Key to Profile
+                await authService.saveProfilePicture({
+                    key: presignRes.key
+                });
+            }
+
+            // 2. Update Profile Details
+            await authService.updateProfile({
+                fullName,
+                phoneNumber: phone
             });
 
-            setUser(updatedUser);
+            // 3. Refresh user to get new profile pic url
+            // getCurrentUser now automatically fetches and attaches the signed profile picture URL
+            const freshUser = await authService.getCurrentUser();
+
+            setUser(freshUser);
 
             Toast.show({
                 type: "success",
@@ -85,6 +111,7 @@ const EditProfile = () => {
             });
             router.back();
         } catch (error: any) {
+            console.error(error);
             Toast.show({
                 type: "error",
                 text1: "Update Failed",
@@ -127,15 +154,11 @@ const EditProfile = () => {
                 <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
                     <View className="items-center mb-6">
                         <View className="relative">
-                            <Image
-                                source={{ uri: getAvatarUrl(fullName, avatar) }}
-                                style={{ width: 100, height: 100, borderRadius: 50 }}
-                                contentFit="cover"
-                            />
+                            <Avatar uri={avatar} name={fullName} size={100} />
                             <TouchableOpacity
                                 className="absolute bottom-0 right-0 bg-primary p-2 rounded-full"
                                 activeOpacity={0.5}
-                                onPress={handlePickAvatar}
+                                onPress={handlePickImage}
                             >
                                 <MaterialIcons name="camera-alt" size={20} color="white" />
                             </TouchableOpacity>
@@ -174,8 +197,8 @@ const EditProfile = () => {
                             keyboardType="numeric"
                         />
 
-                        <Button 
-                            title={isLoading ? "Saving..." : "Save Changes"} 
+                        <Button
+                            title={isLoading ? "Saving..." : "Save Changes"}
                             onPress={handleSave}
                             disabled={isLoading}
                         />

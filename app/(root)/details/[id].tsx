@@ -1,9 +1,9 @@
 import { authService } from "@/api/services/auth";
 import { productService } from "@/api/services/product";
+import Avatar from "@/components/Avatar";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useProductStore } from "@/store/useProductStore";
 import { User } from "@/types/auth";
-import { getAvatarUrl } from "@/utils/avatar";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -358,10 +358,10 @@ const Details = () => {
                             Seller
                         </Text>
                         <View className="flex-row items-center">
-                            <Image
-                                source={{ uri: getAvatarUrl(seller.fullName, seller.profilePicUrl) }}
-                                style={{ width: 50, height: 50, borderRadius: 25 }}
-                                contentFit="cover"
+                            <Avatar
+                                uri={seller.profilePicUrl}
+                                name={seller.fullName}
+                                size={50}
                             />
                             <View className="flex-1 ml-3">
                                 <Text className="text-base font-semibold text-textPrimary">

@@ -49,3 +49,21 @@ export interface VerifyRequest {
     email: string;
     token: string;
 }
+
+export interface PresignProfilePictureRequest {
+    fileName: string;
+    contentType: string;
+}
+
+export interface PresignProfilePictureResponse {
+    uploadUrl: string;
+    key: string;
+}
+
+export interface SaveProfilePictureRequest {
+    key: string;
+}
+
+export interface ViewProfilePictureResponse {
+    url: string;
+}
